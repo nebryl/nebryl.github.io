@@ -581,9 +581,11 @@ function getAllProgressEntries() {
       const id = key.replace("vid_", "");
 
       const percent = data.time / data.duration;
-
-      // nur sinnvolle Einträge
-      if (percent < 0.1 || percent > 0.98) continue;
+      
+      // 🔥 bessere Filterung
+      if (percent < 0.1) continue;     // weniger als 10%
+      if (percent >= 0.98) continue;   // fast fertig
+      if (data.time < 10) continue;    // weniger als 10 Sekunden geschaut
 
       items.push({
         id,
