@@ -71,7 +71,7 @@ body {
   display: none;
 }
 
-/* VIDEO CARD */
+/* VIDEO */
 .video {
   min-width: 200px;
   background: #2a2926;
@@ -91,7 +91,7 @@ body {
   font-size: 12px;
 }
 
-/* 🔴 NETFLIX PROGRESS BAR */
+/* PROGRESS */
 .mini-progress {
   position: absolute;
   top: 0;
@@ -99,10 +99,9 @@ body {
   height: 4px;
   width: 0%;
   background: linear-gradient(90deg, #ff0000, #ff4444);
-  z-index: 10;
 }
 
-/* PLAYER OVERLAY */
+/* PLAYER */
 .overlay {
   position: fixed;
   inset: 0;
@@ -153,7 +152,6 @@ body {
 
 #welcome {
   text-align: center;
-  font-size: 16px;
 }
 
 .logout {
@@ -296,6 +294,30 @@ function getVideoId(url) {
   return null;
 }
 
+/* SAVE POSITION */
+function saveWatch(id) {
+  if (!player) return;
+
+  try {
+    localStorage.setItem("watch_" + id, JSON.stringify({
+      time: player.getCurrentTime() || 0,
+      duration: player.getDuration() || 0
+    }));
+  } catch (e) {}
+}
+
+/* LOAD POSITION */
+function loadWatch(id) {
+  const raw = localStorage.getItem("watch_" + id);
+  if (!raw) return 0;
+
+  try {
+    return JSON.parse(raw).time || 0;
+  } catch {
+    return 0;
+  }
+}
+
 /* CARD */
 function createVideo(item) {
 
@@ -304,8 +326,6 @@ function createVideo(item) {
 
   const div = document.createElement("div");
   div.className = "video";
-
-  /* WICHTIG */
   div.setAttribute("data-id", id);
 
   div.innerHTML = `
@@ -352,6 +372,8 @@ function openPlayer(id) {
   document.getElementById("overlay").style.display = "block";
   document.getElementById("playerView").style.display = "block";
 
+  const startTime = loadWatch(id);
+
   if (!player) {
 
     player = new YT.Player("player", {
@@ -361,18 +383,25 @@ function openPlayer(id) {
         controls: 1
       },
       events: {
-        onReady: () => startProgress()
+        onReady: () => {
+          player.seekTo(startTime, true);
+          startProgress();
+        }
       }
     });
 
   } else {
     player.loadVideoById(id);
-  }
 
-  startProgress();
+    setTimeout(() => {
+      player.seekTo(startTime, true);
+    }, 500);
+
+    startProgress();
+  }
 }
 
-/* PROGRESS (STABIL + SAFE) */
+/* PROGRESS */
 function startProgress() {
 
   clearInterval(progressInterval);
@@ -381,56 +410,43 @@ function startProgress() {
 
     if (!player || !currentVideo) return;
 
-    let current = 0;
-    let duration = 0;
-
-    try {
-      current = player.getCurrentTime() || 0;
-      duration = player.getDuration() || 0;
-    } catch (e) {
-      return;
-    }
+    const current = player.getCurrentTime() || 0;
+    const duration = player.getDuration() || 0;
 
     if (!duration) return;
 
     const percent = (current / duration) * 100;
 
-    const videoCard = document.querySelector(`.video[data-id="${currentVideo}"]`);
-    const bar = videoCard ? videoCard.querySelector(".mini-progress") : null;
+    const card = document.querySelector(`.video[data-id="${currentVideo}"]`);
+    const bar = card ? card.querySelector(".mini-progress") : null;
 
     if (bar) bar.style.width = percent + "%";
 
-  }, 250);
+    saveWatch(currentVideo);
+
+  }, 1000);
 }
 
-/* CLOSE (OHNE RESET DER PROGRESS BAR) */
+/* CLOSE */
 function closePlayer() {
 
   document.getElementById("overlay").style.display = "none";
   document.getElementById("playerView").style.display = "none";
 
   if (player) {
-    try {
-      player.stopVideo();
-    } catch (e) {}
+    try { player.stopVideo(); } catch (e) {}
   }
 
   currentVideo = null;
-
   clearInterval(progressInterval);
   progressInterval = null;
 }
 
-/* ================= EVENTS ================= */
-
-/* Klick nur wenn wirklich Hintergrund getroffen wird */
-document.getElementById("overlay").addEventListener("click", function (e) {
-  if (e.target.id === "overlay") {
-    closePlayer();
-  }
+/* EVENTS */
+document.getElementById("overlay").addEventListener("click", (e) => {
+  if (e.target.id === "overlay") closePlayer();
 });
 
-/* ESC */
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePlayer();
 });
