@@ -64,7 +64,7 @@ body {
   padding: 6px;
 }
 
-/* 🎬 VIDEO */
+/* 🎬 VIDEO CARD */
 .video {
   display: flex;
   gap: 8px;
@@ -82,12 +82,11 @@ body {
   border-radius: 6px;
 }
 
-.video a {
+.video span {
   color: white;
-  text-decoration: none;
 }
 
-/* 🧪 SCROLLBAR */
+/* scrollbar */
 .cell::-webkit-scrollbar {
   width: 5px;
 }
@@ -95,17 +94,20 @@ body {
   background: #333;
 }
 
-/* 🔥 HOVER PREVIEW */
+/* 🔥 MODAL PLAYER */
 .preview {
   position: fixed;
   display: none;
-  width: 360px;
-  height: 200px;
-  border-radius: 10px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 450px;
+  background: black;
+  border-radius: 12px;
   overflow: hidden;
-  z-index: 9999;
-  box-shadow: 0 0 20px rgba(0,0,0,0.8);
-  pointer-events: none;
+  z-index: 99999;
+  box-shadow: 0 0 40px rgba(0,0,0,0.8);
 }
 
 .preview iframe {
@@ -149,7 +151,7 @@ body {
 
 </div>
 
-<!-- 🔥 HOVER PREVIEW -->
+<!-- 🔥 MODAL -->
 <div class="preview" id="preview"></div>
 
 <script>
@@ -178,6 +180,7 @@ function getVideoId(url) {
   return url.split("v=")[1]?.split("&")[0] || url.split("/shorts/")[1];
 }
 
+/* 🎬 VIDEO CARD */
 function createVideo(item) {
   const id = getVideoId(item.link);
   const thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
@@ -185,42 +188,28 @@ function createVideo(item) {
   const div = document.createElement("div");
   div.className = "video";
 
-  let opened = false;
-
   div.innerHTML = `
     <img src="${thumb}">
-    <span style="color:white; font-size:12px;">${item.title}</span>
+    <span>${item.title}</span>
   `;
 
-  const preview = document.getElementById("preview");
-
-  // 1. Klick → Preview öffnen
-  div.addEventListener("click", (e) => {
-    e.preventDefault();
-
-    // 2. Klick → YouTube öffnen
-    if (opened) {
-      window.open(item.link, "_blank");
-      return;
-    }
-
-    opened = true;
+  div.addEventListener("click", () => {
+    const preview = document.getElementById("preview");
 
     preview.style.display = "block";
     preview.innerHTML = `
-      <iframe src="https://www.youtube.com/embed/${id}?autoplay=1&mute=0"
-      frameborder="0"
-      allow="autoplay; encrypted-media"></iframe>
+      <iframe
+        src="https://www.youtube.com/embed/${id}?autoplay=1&controls=1"
+        frameborder="0"
+        allow="autoplay; encrypted-media; fullscreen">
+      </iframe>
     `;
-
-    // kleine visuelle Markierung
-    div.style.outline = "2px solid #ff0000";
   });
 
   return div;
 }
 
-/* 📥 LOAD COLUMN */
+/* 📥 LOAD */
 async function loadColumn(prefix, channelId) {
   const items = await getFeed(channelId);
 
