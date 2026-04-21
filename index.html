@@ -169,6 +169,7 @@
 
 const channels = {
   spandau: "UC5QM2OXKyZaNw13iLbuEpCg",
+  media: "UCeuKtCc2Q0ySUxYX8yRZhcg",
   lol: "UCeM9ckIXeJFvdt4bKpXvTqw",
   fussball: "UCMQkXTIDVvVDh0ZuVB_0APg"
 };
@@ -250,6 +251,7 @@ async function loadColumn(prefix, channelId) {
 }
 
 function loadAll() {
+  loadColumn("media", channels.media);
   loadColumn("spandau", channels.spandau);
   loadColumn("lol", channels.lol);
   loadColumn("fussball", channels.fussball);
