@@ -56,6 +56,25 @@ body {
   filter: drop-shadow(0 0 10px var(--accent-soft));
 }
 
+/* 🎮 TWITCH BUTTON */
+.twitch-btn {
+  grid-column: 1;
+  background: #9146FF;
+  color: white;
+  border: 1px solid var(--border);
+  margin: 10px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.15s ease;
+}
+
+.twitch-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(145, 70, 255, 0.5);
+}
+
 /* 📊 HEADER */
 .col-header {
   background: var(--panel);
@@ -153,6 +172,11 @@ body {
     <img src="./pic.jpg" alt="Logo">
   </div>
 
+  <!-- 🎮 TWITCH BUTTON -->
+  <button class="twitch-btn" onclick="openTwitch()">
+    🎮 Spandau Twitch
+  </button>
+
   <!-- 📊 KANÄLE -->
   <div class="col-header">Spandau</div>
   <div class="col-header">LoL</div>
@@ -213,6 +237,11 @@ function reloadDashboard() {
   const logo = document.querySelector(".logo");
   logo.style.transform = "scale(0.95)";
   setTimeout(() => logo.style.transform = "scale(1)", 150);
+}
+
+/* 🎮 TWITCH */
+function openTwitch() {
+  window.open("https://www.twitch.tv/eintrachtspandau", "_blank");
 }
 
 /* 🎬 VIDEO */
@@ -277,7 +306,7 @@ loadAll();
 /* 🔄 AUTO REFRESH */
 setInterval(loadAll, 5 * 60 * 1000);
 
-/* ❌ CLOSE MODAL: Klick außerhalb */
+/* ❌ CLOSE MODAL */
 document.addEventListener("click", (e) => {
   const preview = document.getElementById("preview");
 
