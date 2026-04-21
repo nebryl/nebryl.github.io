@@ -21,8 +21,7 @@ body {
   color: var(--text);
 }
 
-/* ================= LOGIN ================= */
-
+/* LOGIN */
 #loginView {
   display: flex;
   flex-direction: column;
@@ -45,13 +44,10 @@ body {
   cursor: pointer;
 }
 
-/* ================= APP WRAPPER ================= */
-
+/* APP */
 #appView {
   display: none;
 }
-
-/* ====== DEIN ORIGINAL STYLE BLEIBT ====== */
 
 .container {
   padding: 20px;
@@ -75,6 +71,7 @@ body {
   display: none;
 }
 
+/* VIDEO CARD */
 .video {
   min-width: 200px;
   background: #2a2926;
@@ -109,7 +106,7 @@ body {
   inset: 0;
   background: rgba(0,0,0,0.7);
   display: none;
-  z-index: 999;
+  z-index: 9999;
 }
 
 .preview {
@@ -123,7 +120,11 @@ body {
   background: black;
   border-radius: 12px;
   overflow: hidden;
-  z-index: 1000;
+  z-index: 10000;
+}
+
+.preview iframe {
+  pointer-events: none;
 }
 
 #player {
@@ -141,7 +142,6 @@ body {
   margin-top: 10px;
 }
 
-/* LOGO FIX */
 .logo {
   position: absolute;
   left: 20px;
@@ -153,13 +153,11 @@ body {
   object-fit: contain;
 }
 
-/* CENTER TEXT */
 #welcome {
   text-align: center;
   font-size: 16px;
 }
 
-/* RIGHT BUTTON */
 .logout {
   position: absolute;
   right: 20px;
@@ -174,17 +172,15 @@ body {
 
 <body>
 
-<!-- 🔐 LOGIN (AUSSEN, ISOLIERT) -->
+<!-- LOGIN -->
 <div id="loginView">
   <h2>Einsflix Login</h2>
-
   <input id="username" placeholder="Username">
   <input id="password" type="password" placeholder="Passwort">
-
   <button onclick="login()">Login</button>
 </div>
 
-<!-- 📺 APP (DEIN ORIGINAL SYSTEM UNVERÄNDERT) -->
+<!-- APP -->
 <div id="appView">
 
   <div class="topbar">
@@ -223,7 +219,7 @@ body {
   </div>
 </div>
 
-<!-- 🎬 PLAYER (UNVERÄNDERT FUNKTIONAL) -->
+<!-- PLAYER -->
 <div id="overlay"></div>
 
 <div class="preview" id="playerView">
@@ -232,14 +228,13 @@ body {
 
 <script>
 
-/* ================= LOGIN (SEPARAT, KEIN EINGRIFF IN APP) ================= */
-
+/* LOGIN */
 const PASSWORD = "EinsAufDieEins";
 
 function login() {
 
   const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
+  const pass = document.getElementById("password").value.trim();
 
   if (pass !== PASSWORD) {
     alert("Falsches Passwort");
@@ -261,8 +256,7 @@ function isLoggedIn() {
   return localStorage.getItem("loggedIn") === "true";
 }
 
-/* ================= APP START ================= */
-
+/* APP START */
 function startApp() {
 
   document.getElementById("loginView").style.display = "none";
@@ -271,25 +265,20 @@ function startApp() {
   document.getElementById("welcome").innerText =
     "Willkommen " + localStorage.getItem("user");
 
-  // 👉 HIER wird dein ORIGINAL System gestartet
   loadAll();
 }
 
 window.onload = () => {
-  if (isLoggedIn()) {
-    startApp();
-  }
+  if (isLoggedIn()) startApp();
 };
 
-/* ================= AB HIER: DEIN ORIGINAL SYSTEM ================= */
-
+/* PLAYER */
 let player;
 let currentVideo = null;
 let progressInterval = null;
 
-/* VIDEO ID (UNVERÄNDERT FUNKTIONAL) */
+/* VIDEO ID */
 function getVideoId(url) {
-
   if (!url) return null;
 
   if (url.includes("shorts/")) {
@@ -331,43 +320,31 @@ function createVideo(item) {
 /* LOAD */
 async function loadColumn(channelId, containerId) {
 
-  try {
+  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
 
-    const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+  const res = await fetch(
+    "https://api.rss2json.com/v1/api.json?rss_url=" +
+    encodeURIComponent(url)
+  );
 
-    const res = await fetch(
-      "https://api.rss2json.com/v1/api.json?rss_url=" +
-      encodeURIComponent(url)
-    );
+  const data = await res.json();
 
-    const data = await res.json();
+  const box = document.getElementById(containerId);
+  box.innerHTML = "";
 
-    const box = document.getElementById(containerId);
-    if (!box) return;
-
-    box.innerHTML = "";
-
-    if (!data.items) return;
-
-    data.items.forEach(v => {
-      box.appendChild(createVideo(v));
-    });
-
-  } catch (e) {
-    console.error(e);
-  }
+  data.items?.forEach(v => {
+    box.appendChild(createVideo(v));
+  });
 }
 
 function loadAll() {
-
   loadColumn("UC5QM2OXKyZaNw13iLbuEpCg", "spandau-videos");
   loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos");
   loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos");
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
 }
 
-/* ================= PLAYER ================= */
-
+/* PLAYER OPEN */
 function openPlayer(id) {
 
   currentVideo = id;
@@ -376,22 +353,18 @@ function openPlayer(id) {
   document.getElementById("playerView").style.display = "block";
 
   if (!player) {
-
     player = new YT.Player("player", {
       videoId: id,
       playerVars: { autoplay: 1 },
-      events: {
-        onReady: startProgress
-      }
+      events: { onReady: startProgress }
     });
-
   } else {
     player.loadVideoById(id);
     startProgress();
   }
 }
 
-/* PROGRESS BAR (FIXED) */
+/* PROGRESS */
 function startProgress() {
 
   if (progressInterval) clearInterval(progressInterval);
@@ -416,9 +389,7 @@ function startProgress() {
   }, 300);
 }
 
-/* CLOSE PLAYER (STABIL) */
-document.getElementById("overlay").addEventListener("click", closePlayer);
-
+/* CLOSE PLAYER */
 function closePlayer() {
 
   document.getElementById("overlay").style.display = "none";
@@ -434,20 +405,19 @@ function closePlayer() {
 
   currentVideo = null;
 
-  if (progressInterval) {
-    clearInterval(progressInterval);
-    progressInterval = null;
-  }
+  clearInterval(progressInterval);
+  progressInterval = null;
 
   document.querySelectorAll(".mini-progress").forEach(b => {
     b.style.width = "0%";
   });
 }
 
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") {
-    closePlayer();
-  }
+/* EVENTS FIX */
+document.getElementById("overlay").onclick = closePlayer;
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closePlayer();
 });
 
 </script>
