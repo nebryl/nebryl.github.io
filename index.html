@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Eins Dashboard</title>
+<title>Einsflix</title>
 
 <style>
 
@@ -13,7 +13,6 @@
   --text: #9B978E;
   --accent: #B64F46;
   --accent2: #356675;
-  --accent-soft: rgba(182, 79, 70, 0.25);
   --border: #3a3936;
 }
 
@@ -24,116 +23,70 @@ body {
   color: var(--text);
 }
 
-/* 🧱 GRID */
-.grid {
-  display: grid;
-  grid-template-columns: 140px repeat(4, 1fr);
-  grid-template-rows: 80px repeat(2, 1fr);
-  height: 100vh;
+/* 📦 CONTAINER */
+.container {
+  padding: 20px;
 }
 
 /* 🖼️ LOGO */
 .logo {
-  grid-column: 1;
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
+  width: 80px;
+  margin-bottom: 20px;
   cursor: pointer;
-  transition: transform 0.15s ease;
 }
 
 .logo img {
   width: 60px;
   height: 60px;
-  object-fit: contain;
 }
 
-.twitch-btn {
-  position: fixed;
-  bottom: 15px;
-  right: 15px;
-
-  background: #9146FF;
-  color: white;
-  border: 1px solid var(--border);
-  padding: 10px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.15s ease;
-  z-index: 100000;
+/* 🎬 ROWS */
+.row {
+  margin-bottom: 30px;
 }
 
-.twitch-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 12px rgba(145, 70, 255, 0.5);
-}
-
-/* 📊 HEADER */
-.col-header {
-  background: var(--panel);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  border-bottom: 1px solid var(--border);
-}
-
-/* 📌 ROW HEADER */
-.row-header {
-  background: var(--panel);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  border-right: 1px solid var(--border);
-}
-
-/* 📦 CELLS */
-.cell {
-  overflow-y: auto;
-  background: var(--panel2);
-  padding: 6px;
-}
-
-/* 🎬 VIDEO */
-.video {
-  display: flex;
-  gap: 8px;
-  background: #2a2926;
-  margin: 6px 0;
-  padding: 6px;
-  border-radius: 8px;
-  align-items: center;
-  font-size: 12px;
-  cursor: pointer;
-  transition: 0.15s ease;
-}
-
-.video:hover {
-  outline: 1px solid var(--accent);
-  box-shadow: 0 0 10px var(--accent-soft);
-  transform: scale(1.02);
-}
-
-.video img {
-  width: 85px;
-  border-radius: 6px;
-}
-
-.video span {
+.row h2 {
+  margin: 0 0 10px 0;
   color: var(--text);
 }
 
-/* scrollbar */
-.cell::-webkit-scrollbar {
-  width: 5px;
+/* 📺 HORIZONTAL SCROLL */
+.row-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 10px;
 }
-.cell::-webkit-scrollbar-thumb {
-  background: #333;
+
+.row-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 🎬 VIDEO CARD */
+.video {
+  min-width: 200px;
+  background: #2a2926;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.video:hover {
+  transform: scale(1.08);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.video img {
+  width: 100%;
+  display: block;
+}
+
+.video span {
+  display: block;
+  padding: 6px;
+  font-size: 12px;
+  color: var(--text);
 }
 
 /* 🔥 MODAL */
@@ -157,49 +110,73 @@ body {
   height: 100%;
 }
 
+/* 🎮 TWITCH BUTTON */
+.twitch-btn {
+  position: fixed;
+  bottom: 15px;
+  right: 15px;
+
+  background: #9146FF;
+  color: white;
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.15s ease;
+  z-index: 100000;
+}
+
+.twitch-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(145, 70, 255, 0.5);
+}
+
 </style>
 </head>
 
 <body>
 
-<div class="grid">
+<div class="container">
 
   <!-- 🖼️ LOGO -->
   <div class="logo" onclick="reloadDashboard()">
     <img src="./pic.jpg" alt="Logo">
   </div>
 
-  <!-- 🎮 TWITCH BUTTON -->
-  <button class="twitch-btn" onclick="openTwitch()">
-    🎮 Spandau Twitch
-  </button>
+  <!-- 🎬 SPANDAU -->
+  <div class="row">
+    <h2>Spandau</h2>
+    <div class="row-scroll" id="spandau-videos"></div>
+  </div>
 
-  <!-- 📊 KANÄLE -->
-  <div class="col-header">Spandau</div>
-  <div class="col-header">LoL</div>
-  <div class="col-header">Fußball</div>
-  <div class="col-header">Media</div>
+  <!-- 🎮 LOL -->
+  <div class="row">
+    <h2>LoL</h2>
+    <div class="row-scroll" id="lol-videos"></div>
+  </div>
 
-  <!-- 🎬 VIDEOS -->
-  <div class="row-header">Videos</div>
+  <!-- ⚽ FUSSBALL -->
+  <div class="row">
+    <h2>Fußball</h2>
+    <div class="row-scroll" id="fussball-videos"></div>
+  </div>
 
-  <div class="cell" id="spandau-videos"></div>
-  <div class="cell" id="lol-videos"></div>
-  <div class="cell" id="fussball-videos"></div>
-  <div class="cell" id="media-videos"></div>
-
-  <!-- 🔥 SHORTS -->
-  <div class="row-header">Shorts</div>
-
-  <div class="cell" id="spandau-shorts"></div>
-  <div class="cell" id="lol-shorts"></div>
-  <div class="cell" id="fussball-shorts"></div>
-  <div class="cell" id="media-shorts"></div>
+  <!-- 🎥 MEDIA -->
+  <div class="row">
+    <h2>Media</h2>
+    <div class="row-scroll" id="media-videos"></div>
+  </div>
 
 </div>
 
 <!-- 🔥 MODAL -->
 <div class="preview" id="preview"></div>
+
+<!-- 🎮 TWITCH BUTTON -->
+<button class="twitch-btn" onclick="openTwitch()">
+  🎮 Spandau Twitch
+</button>
 
 <script>
 
@@ -219,10 +196,6 @@ async function getFeed(channelId) {
   return data.items || [];
 }
 
-function isShort(item) {
-  return item.link.includes("/shorts/");
-}
-
 function getVideoId(url) {
   return url.split("v=")[1]?.split("&")[0] || url.split("/shorts/")[1];
 }
@@ -230,10 +203,6 @@ function getVideoId(url) {
 /* 🔄 Reload */
 function reloadDashboard() {
   loadAll();
-
-  const logo = document.querySelector(".logo");
-  logo.style.transform = "scale(0.95)";
-  setTimeout(() => logo.style.transform = "scale(1)", 150);
 }
 
 /* 🎮 TWITCH */
@@ -274,20 +243,11 @@ function createVideo(item) {
 async function loadColumn(prefix, channelId) {
   const items = await getFeed(channelId);
 
-  const videosBox = document.getElementById(prefix + "-videos");
-  const shortsBox = document.getElementById(prefix + "-shorts");
-
-  videosBox.innerHTML = "";
-  shortsBox.innerHTML = "";
+  const box = document.getElementById(prefix + "-videos");
+  box.innerHTML = "";
 
   items.forEach(item => {
-    const el = createVideo(item);
-
-    if (isShort(item)) {
-      shortsBox.appendChild(el);
-    } else {
-      videosBox.appendChild(el);
-    }
+    box.appendChild(createVideo(item));
   });
 }
 
@@ -299,9 +259,6 @@ function loadAll() {
 }
 
 loadAll();
-
-/* 🔄 AUTO REFRESH */
-setInterval(loadAll, 5 * 60 * 1000);
 
 /* ❌ CLOSE MODAL */
 document.addEventListener("click", (e) => {
@@ -317,7 +274,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
-/* ⌨️ ESC CLOSE */
+/* ⌨️ ESC */
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     const preview = document.getElementById("preview");
@@ -325,6 +282,9 @@ document.addEventListener("keydown", (e) => {
     preview.innerHTML = "";
   }
 });
+
+/* 🔄 AUTO REFRESH */
+setInterval(loadAll, 5 * 60 * 1000);
 
 </script>
 
