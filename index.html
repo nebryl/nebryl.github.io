@@ -57,10 +57,6 @@ body {
   margin-bottom: 30px;
 }
 
-.row h2 {
-  margin-bottom: 10px;
-}
-
 .row-scroll {
   display: flex;
   gap: 10px;
@@ -128,6 +124,7 @@ body {
 #player {
   width: 100%;
   height: 100%;
+  pointer-events: auto;
 }
 
 /* TOPBAR */
@@ -193,11 +190,6 @@ body {
   <div class="container">
 
     <div class="row">
-      <h2>Continue Watching</h2>
-      <div class="row-scroll" id="continue-videos"></div>
-    </div>
-
-    <div class="row">
       <h2>Eintracht Spandau</h2>
       <div class="row-scroll" id="spandau-videos"></div>
     </div>
@@ -220,7 +212,7 @@ body {
   </div>
 </div>
 
-<!-- PLAYER -->
+<!-- OVERLAY + PLAYER -->
 <div id="overlay" class="overlay"></div>
 
 <div class="preview" id="playerView">
@@ -234,6 +226,7 @@ body {
 const PASSWORD = "EinsAufDieEins";
 
 function login() {
+
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value.trim();
 
@@ -260,6 +253,7 @@ function isLoggedIn() {
 /* ================= APP ================= */
 
 function startApp() {
+
   document.getElementById("loginView").style.display = "none";
   document.getElementById("appView").style.display = "block";
 
@@ -273,7 +267,7 @@ window.onload = () => {
   if (isLoggedIn()) startApp();
 };
 
-/* ================= PROGRESS ================= */
+/* ================= PROGRESS STORAGE ================= */
 
 function saveProgress(id, time, duration) {
   localStorage.setItem("vid_" + id, JSON.stringify({
@@ -289,130 +283,13 @@ function getProgress(id) {
 
   const parsed = JSON.parse(data);
 
+  // 30 Tage Cleanup
   if (Date.now() - (parsed.ts || 0) > 30 * 24 * 60 * 60 * 1000) {
     localStorage.removeItem("vid_" + id);
     return null;
   }
 
   return parsed;
-}
-
-/* ================= YOUTUBE RSS (STABIL OHNE API) ================= */
-
-async function loadColumn(channelId, containerId) {
-
-  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-
-  try {
-
-    const res = await fetch(url);
-    const text = await res.text();
-
-    const xml = new DOMParser().parseFromString(text, "text/xml");
-
-    const entries = xml.querySelectorAll("entry");
-
-    const box = document.getElementById(containerId);
-    box.innerHTML = "";
-
-    entries.forEach(entry => {
-
-      const title = entry.querySelector("title")?.textContent;
-      const videoId = entry.querySelector("videoId")?.textContent;
-
-      if (!videoId) return;
-
-      box.appendChild(createVideo({
-        title,
-        link: `https://www.youtube.com/watch?v=${videoId}`
-      }));
-    });
-
-  } catch (e) {
-    console.error("Feed Error:", containerId, e);
-  }
-}
-
-function loadAll() {
-  loadColumn("UC5QM2OXKyZaNw13iLbuEpCg", "spandau-videos");
-  loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos");
-  loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos");
-  loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
-
-  loadContinueWatching();
-}
-
-/* ================= CARD ================= */
-
-function createVideo(item) {
-
-  const id = getVideoId(item.link);
-
-  const div = document.createElement("div");
-  div.className = "video";
-
-  div.setAttribute("data-id", id);
-
-  div.innerHTML = `
-    <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg">
-    <span>${item.title}</span>
-    <div class="mini-progress"></div>
-  `;
-
-  const saved = getProgress(id);
-
-  if (saved) {
-    setTimeout(() => {
-      const bar = div.querySelector(".mini-progress");
-      if (bar) bar.style.width = (saved.time / saved.duration) * 100 + "%";
-    }, 0);
-  }
-
-  div.onclick = () => openPlayer(id);
-
-  return div;
-}
-
-/* ================= CONTINUE WATCHING ================= */
-
-function loadContinueWatching() {
-
-  const box = document.getElementById("continue-videos");
-  box.innerHTML = "";
-
-  const items = [];
-
-  for (let i = 0; i < localStorage.length; i++) {
-
-    const key = localStorage.key(i);
-
-    if (!key.startsWith("vid_")) continue;
-
-    try {
-      const data = JSON.parse(localStorage.getItem(key));
-
-      if (!data?.time || !data?.duration) continue;
-
-      const percent = data.time / data.duration;
-
-      if (percent < 0.1 || percent > 0.95) continue;
-
-      items.push({
-        id: key.replace("vid_", ""),
-        ...data
-      });
-
-    } catch {}
-  }
-
-  items.sort((a,b) => (b.ts || 0) - (a.ts || 0));
-
-  items.forEach(v => {
-    box.appendChild(createVideo({
-      title: "Weiter schauen",
-      link: `https://www.youtube.com/watch?v=${v.id}`
-    }));
-  });
 }
 
 /* ================= PLAYER ================= */
@@ -424,11 +301,77 @@ let progressInterval = null;
 function getVideoId(url) {
   if (!url) return null;
 
-  if (url.includes("shorts/")) return url.split("shorts/")[1].split("?")[0];
-  if (url.includes("youtu.be/")) return url.split("youtu.be/")[1].split("?")[0];
-  if (url.includes("v=")) return url.split("v=")[1].split("&")[0];
+  if (url.includes("shorts/")) {
+    return url.split("shorts/")[1].split("?")[0];
+  }
+
+  if (url.includes("youtu.be/")) {
+    return url.split("youtu.be/")[1].split("?")[0];
+  }
+
+  if (url.includes("v=")) {
+    return url.split("v=")[1].split("&")[0];
+  }
 
   return null;
+}
+
+/* CARD */
+function createVideo(item) {
+
+  const id = getVideoId(item.link);
+  if (!id) return document.createElement("div");
+
+  const div = document.createElement("div");
+  div.className = "video";
+  div.setAttribute("data-id", id);
+
+  div.innerHTML = `
+    <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg">
+    <span>${item.title}</span>
+    <div class="mini-progress"></div>
+  `;
+
+  // 🔥 RESTORE PROGRESS ON LOAD
+  const saved = getProgress(id);
+
+  if (saved && saved.duration > 0) {
+    const percent = (saved.time / saved.duration) * 100;
+
+    setTimeout(() => {
+      const bar = div.querySelector(".mini-progress");
+      if (bar) bar.style.width = percent + "%";
+    }, 0);
+  }
+
+  div.onclick = () => openPlayer(id);
+
+  return div;
+}
+
+/* LOAD */
+async function loadColumn(channelId, containerId) {
+
+  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+
+  const res = await fetch(
+    "https://api.rss2json.com/v1/api.json?rss_url=" +
+    encodeURIComponent(url)
+  );
+
+  const data = await res.json();
+
+  const box = document.getElementById(containerId);
+  box.innerHTML = "";
+
+  data.items?.forEach(v => box.appendChild(createVideo(v)));
+}
+
+function loadAll() {
+  loadColumn("UC5QM2OXKyZaNw13iLbuEpCg", "spandau-videos");
+  loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos");
+  loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos");
+  loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
 }
 
 /* OPEN */
@@ -440,7 +383,7 @@ function openPlayer(id) {
   document.getElementById("playerView").style.display = "block";
 
   const saved = getProgress(id);
-  const start = saved?.time || 0;
+  const startTime = saved?.time || 0;
 
   if (!player) {
 
@@ -449,7 +392,7 @@ function openPlayer(id) {
       playerVars: { autoplay: 1 },
       events: {
         onReady: () => {
-          player.seekTo(start, true);
+          player.seekTo(startTime, true);
           startProgress();
         }
       }
@@ -477,10 +420,12 @@ function startProgress() {
 
     saveProgress(currentVideo, current, duration);
 
+    const percent = (current / duration) * 100;
+
     const card = document.querySelector(`.video[data-id="${currentVideo}"]`);
     const bar = card?.querySelector(".mini-progress");
 
-    if (bar) bar.style.width = (current / duration) * 100 + "%";
+    if (bar) bar.style.width = percent + "%";
 
   }, 500);
 }
@@ -492,11 +437,10 @@ function closePlayer() {
   document.getElementById("playerView").style.display = "none";
 
   if (player) {
-    try { player.pauseVideo(); } catch {}
+    try { player.pauseVideo(); } catch(e) {}
   }
 
   currentVideo = null;
-
   clearInterval(progressInterval);
   progressInterval = null;
 }
