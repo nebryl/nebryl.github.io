@@ -195,6 +195,18 @@ body {
   padding: 4px;
 }
 
+.badge-new {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: red;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
 </style>
 </head>
 
@@ -382,6 +394,16 @@ function isShort(url) {
   return url.includes("shorts/");
 }
 
+  /* isNewVideo */
+function isNewVideo(item) {
+  const published = new Date(item.pubDate).getTime();
+  const now = Date.now();
+
+  const hours = (now - published) / (1000 * 60 * 60);
+
+  return hours <= 48;
+}
+
 /* CARD */
 function createVideo(item) {
 
@@ -390,6 +412,7 @@ function createVideo(item) {
   
   if (!id) return document.createElement("div");
 
+  const isNew = isNewVideo(item);
   const div = document.createElement("div");
   div.className = "video" + (isShortVideo ? " short" : "");
   div.setAttribute("data-id", id);
@@ -398,6 +421,7 @@ function createVideo(item) {
     <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg">
     <span>${item.title}</span>
     <div class="mini-progress"></div>
+    ${isNew ? '<div class="badge-new">NEU</div>' : ''}
   `;
 
   // 🔥 RESTORE PROGRESS ON LOAD
