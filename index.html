@@ -91,7 +91,7 @@ body {
   font-size: 12px;
 }
 
-/* PROGRESS */
+/* 🔴 PROGRESS BAR */
 .mini-progress {
   position: absolute;
   top: 0;
@@ -99,6 +99,7 @@ body {
   height: 4px;
   width: 0%;
   background: linear-gradient(90deg, #ff0000, #ff4444);
+  z-index: 10;
 }
 
 /* PLAYER */
@@ -294,19 +295,7 @@ function getVideoId(url) {
   return null;
 }
 
-/* SAVE POSITION */
-function saveWatch(id) {
-  if (!player) return;
-
-  try {
-    localStorage.setItem("watch_" + id, JSON.stringify({
-      time: player.getCurrentTime() || 0,
-      duration: player.getDuration() || 0
-    }));
-  } catch (e) {}
-}
-
-/* LOAD POSITION */
+/* LOAD TIME */
 function loadWatch(id) {
   const raw = localStorage.getItem("watch_" + id);
   if (!raw) return 0;
@@ -316,6 +305,18 @@ function loadWatch(id) {
   } catch {
     return 0;
   }
+}
+
+/* SAVE TIME */
+function saveWatch(id) {
+  if (!player) return;
+
+  try {
+    localStorage.setItem("watch_" + id, JSON.stringify({
+      time: player.getCurrentTime() || 0,
+      duration: player.getDuration() || 0
+    }));
+  } catch (e) {}
 }
 
 /* CARD */
@@ -333,6 +334,22 @@ function createVideo(item) {
     <span>${item.title}</span>
     <div class="mini-progress"></div>
   `;
+
+  /* 🔥 FIX: Progress sofort beim Rendern setzen */
+  const saved = localStorage.getItem("watch_" + id);
+
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+
+      setTimeout(() => {
+        const bar = div.querySelector(".mini-progress");
+        if (bar && data.duration) {
+          bar.style.width = ((data.time / data.duration) * 100) + "%";
+        }
+      }, 0);
+    } catch (e) {}
+  }
 
   div.onclick = () => openPlayer(id);
 
@@ -378,10 +395,7 @@ function openPlayer(id) {
 
     player = new YT.Player("player", {
       videoId: id,
-      playerVars: {
-        autoplay: 1,
-        controls: 1
-      },
+      playerVars: { controls: 1, autoplay: 1 },
       events: {
         onReady: () => {
           player.seekTo(startTime, true);
@@ -434,10 +448,11 @@ function closePlayer() {
   document.getElementById("playerView").style.display = "none";
 
   if (player) {
-    try { player.stopVideo(); } catch (e) {}
+    try { player.stopVideo(); } catch(e) {}
   }
 
   currentVideo = null;
+
   clearInterval(progressInterval);
   progressInterval = null;
 }
