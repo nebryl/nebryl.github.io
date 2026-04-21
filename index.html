@@ -91,7 +91,7 @@ body {
   font-size: 12px;
 }
 
-/* 🔴 NETFLIX PROGRESS BAR (THUMBNAIL) */
+/* 🔴 NETFLIX PROGRESS BAR */
 .mini-progress {
   position: absolute;
   top: 0;
@@ -102,7 +102,7 @@ body {
   z-index: 10;
 }
 
-/* PLAYER */
+/* PLAYER OVERLAY */
 .overlay {
   position: fixed;
   inset: 0;
@@ -305,7 +305,7 @@ function createVideo(item) {
   const div = document.createElement("div");
   div.className = "video";
 
-  /* WICHTIG FÜR PROGRESS */
+  /* WICHTIG */
   div.setAttribute("data-id", id);
 
   div.innerHTML = `
@@ -344,7 +344,7 @@ function loadAll() {
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
 }
 
-/* OPEN PLAYER */
+/* OPEN */
 function openPlayer(id) {
 
   currentVideo = id;
@@ -358,8 +358,7 @@ function openPlayer(id) {
       videoId: id,
       playerVars: {
         autoplay: 1,
-        controls: 1,   // 🔥 WICHTIG: Controls wieder sichtbar
-        rel: 0
+        controls: 1
       },
       events: {
         onReady: () => startProgress()
@@ -373,7 +372,7 @@ function openPlayer(id) {
   startProgress();
 }
 
-/* PROGRESS */
+/* PROGRESS (STABIL + SAFE) */
 function startProgress() {
 
   clearInterval(progressInterval);
@@ -404,7 +403,7 @@ function startProgress() {
   }, 250);
 }
 
-/* CLOSE */
+/* CLOSE (OHNE RESET DER PROGRESS BAR) */
 function closePlayer() {
 
   document.getElementById("overlay").style.display = "none";
@@ -420,15 +419,18 @@ function closePlayer() {
 
   clearInterval(progressInterval);
   progressInterval = null;
-
-  document.querySelectorAll(".mini-progress").forEach(b => {
-    b.style.width = "0%";
-  });
 }
 
-/* EVENTS */
-document.getElementById("overlay").addEventListener("mousedown", closePlayer);
+/* ================= EVENTS ================= */
 
+/* Klick nur wenn wirklich Hintergrund getroffen wird */
+document.getElementById("overlay").addEventListener("click", function (e) {
+  if (e.target.id === "overlay") {
+    closePlayer();
+  }
+});
+
+/* ESC */
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePlayer();
 });
