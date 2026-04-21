@@ -124,7 +124,6 @@ body {
 #player {
   width: 100%;
   height: 100%;
-  pointer-events: auto;
 }
 
 /* TOPBAR */
@@ -166,7 +165,6 @@ body {
 
 <body>
 
-<!-- LOGIN -->
 <div id="loginView">
   <h2>Einsflix Login</h2>
   <input id="username" placeholder="Username">
@@ -174,7 +172,6 @@ body {
   <button onclick="login()">Login</button>
 </div>
 
-<!-- APP -->
 <div id="appView">
 
   <div class="topbar">
@@ -183,11 +180,16 @@ body {
     </div>
 
     <div id="welcome"></div>
-
     <div class="logout" onclick="logout()">Logout</div>
   </div>
 
   <div class="container">
+
+    <!-- ⭐ CONTINUE WATCHING -->
+    <div class="row">
+      <h2>Continue Watching</h2>
+      <div class="row-scroll" id="continue-videos"></div>
+    </div>
 
     <div class="row">
       <h2>Eintracht Spandau</h2>
@@ -212,7 +214,6 @@ body {
   </div>
 </div>
 
-<!-- OVERLAY + PLAYER -->
 <div id="overlay" class="overlay"></div>
 
 <div class="preview" id="playerView">
@@ -226,7 +227,6 @@ body {
 const PASSWORD = "EinsAufDieEins";
 
 function login() {
-
   const user = document.getElementById("username").value;
   const pass = document.getElementById("password").value.trim();
 
@@ -253,7 +253,6 @@ function isLoggedIn() {
 /* ================= APP ================= */
 
 function startApp() {
-
   document.getElementById("loginView").style.display = "none";
   document.getElementById("appView").style.display = "block";
 
@@ -261,13 +260,14 @@ function startApp() {
     "Willkommen " + localStorage.getItem("user");
 
   loadAll();
+  loadContinueWatching(); // ⭐ WICHTIG
 }
 
 window.onload = () => {
   if (isLoggedIn()) startApp();
 };
 
-/* ================= PROGRESS STORAGE ================= */
+/* ================= STORAGE ================= */
 
 function saveProgress(id, time, duration) {
   localStorage.setItem("vid_" + id, JSON.stringify({
@@ -283,7 +283,6 @@ function getProgress(id) {
 
   const parsed = JSON.parse(data);
 
-  // 30 Tage Cleanup
   if (Date.now() - (parsed.ts || 0) > 30 * 24 * 60 * 60 * 1000) {
     localStorage.removeItem("vid_" + id);
     return null;
@@ -292,7 +291,69 @@ function getProgress(id) {
   return parsed;
 }
 
-/* ================= PLAYER ================= */
+/* ================= CONTINUE WATCHING ================= */
+
+function getAllProgressEntries() {
+  const items = [];
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+
+    if (!key.startsWith("vid_")) continue;
+
+    try {
+      const data = JSON.parse(localStorage.getItem(key));
+      if (!data) continue;
+
+      const percent = data.time / data.duration;
+
+      if (percent < 0.1 || percent > 0.95) continue;
+
+      items.push({
+        id: key.replace("vid_", ""),
+        ...data
+      });
+
+    } catch (e) {}
+  }
+
+  return items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+}
+
+function createContinueCard(item) {
+
+  const div = document.createElement("div");
+  div.className = "video";
+
+  const percent = (item.time / item.duration) * 100;
+
+  div.innerHTML = `
+    <img src="https://img.youtube.com/vi/${item.id}/mqdefault.jpg">
+    <span>Continue</span>
+    <div class="mini-progress" style="width:${percent}%"></div>
+  `;
+
+  div.onclick = () => openPlayer(item.id);
+
+  return div;
+}
+
+function loadContinueWatching() {
+
+  const box = document.getElementById("continue-videos");
+  box.innerHTML = "";
+
+  const items = getAllProgressEntries();
+
+  if (items.length === 0) {
+    box.innerHTML = "<span style='opacity:0.6'>Noch nichts angeschaut</span>";
+    return;
+  }
+
+  items.forEach(v => box.appendChild(createContinueCard(v)));
+}
+
+/* ================= VIDEO SYSTEM ================= */
 
 let player;
 let currentVideo = null;
@@ -300,19 +361,9 @@ let progressInterval = null;
 
 function getVideoId(url) {
   if (!url) return null;
-
-  if (url.includes("shorts/")) {
-    return url.split("shorts/")[1].split("?")[0];
-  }
-
-  if (url.includes("youtu.be/")) {
-    return url.split("youtu.be/")[1].split("?")[0];
-  }
-
-  if (url.includes("v=")) {
-    return url.split("v=")[1].split("&")[0];
-  }
-
+  if (url.includes("shorts/")) return url.split("shorts/")[1].split("?")[0];
+  if (url.includes("youtu.be/")) return url.split("youtu.be/")[1].split("?")[0];
+  if (url.includes("v=")) return url.split("v=")[1].split("&")[0];
   return null;
 }
 
@@ -324,7 +375,6 @@ function createVideo(item) {
 
   const div = document.createElement("div");
   div.className = "video";
-  div.setAttribute("data-id", id);
 
   div.innerHTML = `
     <img src="https://img.youtube.com/vi/${id}/mqdefault.jpg">
@@ -332,12 +382,9 @@ function createVideo(item) {
     <div class="mini-progress"></div>
   `;
 
-  // 🔥 RESTORE PROGRESS ON LOAD
   const saved = getProgress(id);
-
-  if (saved && saved.duration > 0) {
+  if (saved) {
     const percent = (saved.time / saved.duration) * 100;
-
     setTimeout(() => {
       const bar = div.querySelector(".mini-progress");
       if (bar) bar.style.width = percent + "%";
@@ -374,7 +421,7 @@ function loadAll() {
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
 }
 
-/* OPEN */
+/* PLAYER */
 function openPlayer(id) {
 
   currentVideo = id;
@@ -383,21 +430,19 @@ function openPlayer(id) {
   document.getElementById("playerView").style.display = "block";
 
   const saved = getProgress(id);
-  const startTime = saved?.time || 0;
+  const start = saved?.time || 0;
 
   if (!player) {
-
     player = new YT.Player("player", {
       videoId: id,
       playerVars: { autoplay: 1 },
       events: {
         onReady: () => {
-          player.seekTo(startTime, true);
+          player.seekTo(start, true);
           startProgress();
         }
       }
     });
-
   } else {
     player.loadVideoById(id);
     startProgress();
@@ -443,6 +488,8 @@ function closePlayer() {
   currentVideo = null;
   clearInterval(progressInterval);
   progressInterval = null;
+
+  loadContinueWatching(); // ⭐ refresh
 }
 
 /* EVENTS */
