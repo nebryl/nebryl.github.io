@@ -347,6 +347,7 @@ function getProgress(id) {
 let player;
 let currentVideo = null;
 let progressInterval = null;
+let playerReady = false; 
 
 function getVideoId(url) {
   if (!url) return null;
@@ -445,6 +446,7 @@ function openPlayer(id) {
       events: {
         onReady: () => {
           player.seekTo(startTime, true);
+          playerReady = true;
           startProgress();
         }
       }
@@ -460,25 +462,25 @@ function openPlayer(id) {
 function startProgress() {
 
   clearInterval(progressInterval);
-
+  
   progressInterval = setInterval(() => {
-
-    if (!player || !currentVideo) return;
-
+  
+    if (!player || !currentVideo || !playerReady) return;
+  
     const current = player.getCurrentTime();
     const duration = player.getDuration();
-
+  
     if (!duration) return;
-
+  
     saveProgress(currentVideo, current, duration);
-
+  
     const percent = (current / duration) * 100;
-
+  
     const card = document.querySelector(`.video[data-id="${currentVideo}"]`);
     const bar = card?.querySelector(".mini-progress");
-
+  
     if (bar) bar.style.width = percent + "%";
-
+  
   }, 500);
 }
 
@@ -558,7 +560,9 @@ function saveCurrent() {
 
 /* CLOSE */
 function closePlayer() {
-
+  saveCurrent();
+  playerReady = false;
+  
   document.getElementById("overlay").style.display = "none";
   document.getElementById("playerView").style.display = "none";
 
@@ -569,8 +573,6 @@ function closePlayer() {
   currentVideo = null;
   clearInterval(progressInterval);
   progressInterval = null;
-
-  saveCurrent();
   renderContinueWatching();
 }
 
