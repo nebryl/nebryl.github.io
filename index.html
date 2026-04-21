@@ -444,14 +444,13 @@ function openPlayer(id) {
     videoId: id,
     playerVars: { autoplay: 1 },
     events: {
-      onReady: (e) => {
+      onReady: () => {
         setTimeout(() => {
           player.seekTo(startTime, true);
-        }, 300);
-        playerReady = true;
-      
-        setTimeout(() => {
-          startProgress();
+          setTimeout(() => {
+            playerReady = true;
+            startProgress();
+          }, 300);
         }, 300);
       },
       onStateChange: onPlayerStateChange
