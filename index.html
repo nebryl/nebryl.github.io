@@ -22,39 +22,21 @@ body {
   color: var(--text);
 }
 
-.container {
-  padding: 20px;
-}
+.container { padding: 20px; }
 
-.logo {
-  width: 80px;
-  margin-bottom: 20px;
-  cursor: pointer;
-}
-.logo img {
-  width: 60px;
-}
+.logo { width: 80px; margin-bottom: 20px; cursor: pointer; }
+.logo img { width: 60px; }
 
-/* ROW */
-.row {
-  margin-bottom: 30px;
-}
+.row { margin-bottom: 30px; }
+.row h2 { margin-bottom: 10px; }
 
-.row h2 {
-  margin-bottom: 10px;
-}
-
-/* SCROLL */
 .row-scroll {
   display: flex;
   gap: 10px;
   overflow-x: auto;
 }
-.row-scroll::-webkit-scrollbar {
-  display: none;
-}
+.row-scroll::-webkit-scrollbar { display: none; }
 
-/* CARD */
 .video {
   min-width: 200px;
   background: #2a2926;
@@ -65,15 +47,10 @@ body {
   transition: 0.2s;
 }
 
-.video:hover {
-  transform: scale(1.06);
-}
+.video:hover { transform: scale(1.06); }
 
-.video img {
-  width: 100%;
-}
+.video img { width: 100%; }
 
-/* HOVER VIDEO */
 .hover-preview {
   position: absolute;
   inset: 0;
@@ -95,7 +72,6 @@ body {
   font-size: 12px;
 }
 
-/* 🔴 PROGRESS OBEN */
 .mini-progress {
   position: absolute;
   top: 0;
@@ -106,7 +82,6 @@ body {
   z-index: 6;
 }
 
-/* OVERLAY */
 .overlay {
   position: fixed;
   inset: 0;
@@ -115,7 +90,6 @@ body {
   z-index: 99998;
 }
 
-/* PLAYER */
 .preview {
   position: fixed;
   display: none;
@@ -130,12 +104,8 @@ body {
   z-index: 99999;
 }
 
-#player {
-  width: 100%;
-  height: 100%;
-}
+#player { width: 100%; height: 100%; }
 
-/* TWITCH */
 .twitch-btn {
   position: fixed;
   bottom: 15px;
@@ -165,17 +135,17 @@ body {
   </div>
 
   <div class="row">
-    <h2>Eintracht Spandau League of Legends</h2>
+    <h2>LoL</h2>
     <div class="row-scroll" id="lol-videos"></div>
   </div>
 
   <div class="row">
-    <h2>Eintracht Spandau Fußball</h2>
+    <h2>Fußball</h2>
     <div class="row-scroll" id="fussball-videos"></div>
   </div>
 
   <div class="row">
-    <h2>Eintracht Spandau Mediathek</h2>
+    <h2>Mediathek</h2>
     <div class="row-scroll" id="media-videos"></div>
   </div>
 
@@ -202,26 +172,88 @@ let player;
 let currentVideo = null;
 let progressInterval = null;
 
-/* ID FIX */
-function getVideoId(url) {
-  if (url.includes("shorts")) {
-    return url.split("/shorts/")[1].split("?")[0];
-  }
-  return url.split("v=")[1]?.split("&")[0];
+/* =========================
+   🧠 STORAGE SETTINGS
+========================= */
+
+const MAX_ITEMS = 75;
+const MAX_DAYS = 30;
+const MIN_WATCH_PERCENT = 0.10;
+
+/* =========================
+   📦 SAVE PROGRESS
+========================= */
+
+function saveProgress(id, time, duration) {
+
+  if (!duration || duration === 0) return;
+
+  if (time / duration < MIN_WATCH_PERCENT) return;
+
+  localStorage.setItem("vid_" + id, JSON.stringify({
+    time,
+    duration,
+    updatedAt: Date.now()
+  }));
+
+  cleanupStorage();
 }
 
-/* STORAGE */
-function saveProgress(id, time, duration) {
-  localStorage.setItem("vid_" + id, JSON.stringify({ time, duration }));
+/* =========================
+   🧹 CLEANUP (AGE + SIZE)
+========================= */
+
+function cleanupStorage() {
+
+  const now = Date.now();
+
+  let items = Object.keys(localStorage)
+    .filter(k => k.startsWith("vid_"))
+    .map(k => {
+      const data = JSON.parse(localStorage.getItem(k));
+      return { key: k, updatedAt: data.updatedAt || 0 };
+    });
+
+  // ⏳ remove old (>30 days)
+  items.forEach(item => {
+    const ageDays = (now - item.updatedAt) / (1000 * 60 * 60 * 24);
+    if (ageDays > MAX_DAYS) {
+      localStorage.removeItem(item.key);
+    }
+  });
+
+  // 🔄 reload after cleanup
+  items = Object.keys(localStorage)
+    .filter(k => k.startsWith("vid_"))
+    .map(k => {
+      const data = JSON.parse(localStorage.getItem(k));
+      return { key: k, updatedAt: data.updatedAt || 0 };
+    })
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+
+  // 📦 limit size
+  if (items.length > MAX_ITEMS) {
+    items.slice(MAX_ITEMS).forEach(i => {
+      localStorage.removeItem(i.key);
+    });
+  }
 }
+
+/* =========================
+   📖 GET PROGRESS
+========================= */
 
 function getProgress(id) {
   const data = localStorage.getItem("vid_" + id);
   return data ? JSON.parse(data) : null;
 }
 
-/* PLAYER */
+/* =========================
+   🎥 PLAYER
+========================= */
+
 function openPlayer(id) {
+
   currentVideo = id;
 
   document.querySelector(".preview").style.display = "block";
@@ -235,22 +267,20 @@ function openPlayer(id) {
   } else {
     player = new YT.Player("player", {
       videoId: id,
-      playerVars: {
-        autoplay: 1,
-        start: startTime
-      },
+      playerVars: { autoplay: 1, start: startTime },
       events: {
         onReady: () => {
-          if (!progressInterval) {
-            progressInterval = setInterval(updateProgress, 500);
-          }
+          progressInterval = setInterval(updateProgress, 500);
         }
       }
     });
   }
 }
 
-/* PROGRESS */
+/* =========================
+   📊 PROGRESS UPDATE
+========================= */
+
 function updateProgress() {
   if (!player || !currentVideo) return;
 
@@ -267,7 +297,10 @@ function updateProgress() {
   }
 }
 
-/* CLOSE */
+/* =========================
+   ❌ CLOSE
+========================= */
+
 document.getElementById("overlay").addEventListener("click", closePlayer);
 
 function closePlayer() {
@@ -275,10 +308,24 @@ function closePlayer() {
   document.getElementById("overlay").style.display = "none";
 
   if (player) player.stopVideo();
+
+  clearInterval(progressInterval);
+  progressInterval = null;
 }
 
-/* CREATE */
+/* =========================
+   🧩 VIDEO CARD
+========================= */
+
+function getVideoId(url) {
+  if (url.includes("shorts")) {
+    return url.split("/shorts/")[1].split("?")[0];
+  }
+  return url.split("v=")[1]?.split("&")[0];
+}
+
 function createVideo(item) {
+
   const id = getVideoId(item.link);
   const thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
 
@@ -293,14 +340,12 @@ function createVideo(item) {
     <div class="mini-progress"></div>
   `;
 
-  /* RESTORE PROGRESS */
   const saved = getProgress(id);
   if (saved && saved.duration > 0) {
     const percent = (saved.time / saved.duration) * 100;
-    div.querySelector(".mini-progress").style.width = Math.min(percent, 100) + "%";
+    div.querySelector(".mini-progress").style.width = percent + "%";
   }
 
-  /* HOVER */
   const preview = div.querySelector(".hover-preview");
   let timer;
 
@@ -324,7 +369,10 @@ function createVideo(item) {
   return div;
 }
 
-/* LOAD */
+/* =========================
+   📡 FEED
+========================= */
+
 async function getFeed(id) {
   const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
   const res = await fetch(
@@ -338,7 +386,6 @@ async function loadColumn(key, id) {
   const items = await getFeed(id);
   const box = document.getElementById(key + "-videos");
   box.innerHTML = "";
-
   items.forEach(v => box.appendChild(createVideo(v)));
 }
 
@@ -346,9 +393,17 @@ function loadAll() {
   Object.entries(channels).forEach(([k, v]) => loadColumn(k, v));
 }
 
+/* =========================
+   🚀 START
+========================= */
+
+cleanupStorage();
 loadAll();
 
-/* TWITCH */
+/* =========================
+   🔗 EXTRAS
+========================= */
+
 function openTwitch() {
   window.open("https://www.twitch.tv/eintrachtspandau", "_blank");
 }
