@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Eins Dashboard</title>
+<title>YouTube Dashboard</title>
 
 <style>
 body {
@@ -12,7 +12,7 @@ body {
   color: white;
 }
 
-/* 🧱 GRID LAYOUT */
+/* 🧱 GRID */
 .grid {
   display: grid;
   grid-template-columns: 140px repeat(4, 1fr);
@@ -37,7 +37,7 @@ body {
   object-fit: contain;
 }
 
-/* 📊 Kanal-Header */
+/* 📊 HEADER */
 .col-header {
   background: #1b1b1b;
   display: flex;
@@ -47,7 +47,7 @@ body {
   border-bottom: 1px solid #333;
 }
 
-/* 📌 Zeilen-Header */
+/* 📌 ROW HEADER */
 .row-header {
   background: #1b1b1b;
   display: flex;
@@ -57,14 +57,14 @@ body {
   border-right: 1px solid #333;
 }
 
-/* 📦 Zellen */
+/* 📦 CELLS */
 .cell {
   overflow-y: auto;
   background: #141414;
   padding: 6px;
 }
 
-/* 🎬 Video Card */
+/* 🎬 VIDEO */
 .video {
   display: flex;
   gap: 8px;
@@ -74,6 +74,7 @@ body {
   border-radius: 8px;
   align-items: center;
   font-size: 12px;
+  cursor: pointer;
 }
 
 .video img {
@@ -86,12 +87,30 @@ body {
   text-decoration: none;
 }
 
-/* Scrollbar */
+/* 🧪 SCROLLBAR */
 .cell::-webkit-scrollbar {
   width: 5px;
 }
 .cell::-webkit-scrollbar-thumb {
   background: #333;
+}
+
+/* 🔥 HOVER PREVIEW */
+.preview {
+  position: fixed;
+  display: none;
+  width: 360px;
+  height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 9999;
+  box-shadow: 0 0 20px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+
+.preview iframe {
+  width: 100%;
+  height: 100%;
 }
 
 </style>
@@ -112,7 +131,7 @@ body {
   <div class="col-header">LoL</div>
   <div class="col-header">Fußball</div>
 
-  <!-- 🧾 ZEILE: VIDEOS -->
+  <!-- 🎬 VIDEOS -->
   <div class="row-header">Videos</div>
 
   <div class="cell" id="spandau-videos"></div>
@@ -120,7 +139,7 @@ body {
   <div class="cell" id="lol-videos"></div>
   <div class="cell" id="fussball-videos"></div>
 
-  <!-- 🧾 ZEILE: SHORTS -->
+  <!-- 🔥 SHORTS -->
   <div class="row-header">Shorts</div>
 
   <div class="cell" id="spandau-shorts"></div>
@@ -129,6 +148,9 @@ body {
   <div class="cell" id="fussball-shorts"></div>
 
 </div>
+
+<!-- 🔥 HOVER PREVIEW -->
+<div class="preview" id="preview"></div>
 
 <script>
 
@@ -141,7 +163,9 @@ const channels = {
 
 async function getFeed(channelId) {
   const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-  const res = await fetch("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url));
+  const res = await fetch(
+    "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url)
+  );
   const data = await res.json();
   return data.items || [];
 }
@@ -154,6 +178,7 @@ function getVideoId(url) {
   return url.split("v=")[1]?.split("&")[0] || url.split("/shorts/")[1];
 }
 
+/* 🎬 VIDEO CARD + HOVER */
 function createVideo(item) {
   const id = getVideoId(item.link);
   const thumb = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
@@ -166,9 +191,31 @@ function createVideo(item) {
     <a href="${item.link}" target="_blank">${item.title}</a>
   `;
 
+  const preview = document.getElementById("preview");
+
+  div.addEventListener("mouseenter", () => {
+    preview.style.display = "block";
+    preview.innerHTML = `
+      <iframe src="https://www.youtube.com/embed/${id}?autoplay=1&mute=1"
+      frameborder="0"
+      allow="autoplay; encrypted-media"></iframe>
+    `;
+  });
+
+  div.addEventListener("mousemove", (e) => {
+    preview.style.left = (e.pageX + 20) + "px";
+    preview.style.top = (e.pageY + 20) + "px";
+  });
+
+  div.addEventListener("mouseleave", () => {
+    preview.style.display = "none";
+    preview.innerHTML = "";
+  });
+
   return div;
 }
 
+/* 📥 LOAD COLUMN */
 async function loadColumn(prefix, channelId) {
   const items = await getFeed(channelId);
 
@@ -189,6 +236,7 @@ async function loadColumn(prefix, channelId) {
   });
 }
 
+/* 🚀 LOAD ALL */
 function loadAll() {
   Object.entries(channels).forEach(([key, id]) => {
     loadColumn(key, id);
@@ -197,7 +245,7 @@ function loadAll() {
 
 loadAll();
 
-// 🔄 Auto Refresh alle 5 Minuten
+/* 🔄 AUTO REFRESH */
 setInterval(loadAll, 5 * 60 * 1000);
 
 </script>
