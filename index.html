@@ -161,6 +161,30 @@ body {
   border-radius: 6px;
 }
 
+.pw-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pw-wrapper input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.eye {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 18px;
+  opacity: 0.7;
+}
+
+.eye:hover {
+  opacity: 1;
+}
+
 </style>
 </head>
 
@@ -175,6 +199,12 @@ body {
     <input name="password" id="password" type="password" placeholder="Passwort" autocomplete="current-password">
     <button type="submit">Login</button>
   </form>
+</div>
+
+ <!-- Auge -->
+<div class="pw-wrapper">
+  <input id="password" type="password" placeholder="Passwort" autocomplete="current-password">
+  <span class="eye" onclick="togglePassword()">👁️</span>
 </div>
 
 <!-- APP -->
@@ -252,6 +282,16 @@ function login() {
   localStorage.setItem("loggedIn", "true");
 
   startApp();
+}
+
+function togglePassword() {
+  const input = document.getElementById("password");
+
+  if (input.type === "password") {
+    input.type = "text";
+  } else {
+    input.type = "password";
+  }
 }
 
 function logout() {
