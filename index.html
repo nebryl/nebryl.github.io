@@ -444,14 +444,22 @@ function openPlayer(id) {
     videoId: id,
     playerVars: { autoplay: 1 },
     events: {
-      onReady: () => {
-        setTimeout(() => {
-          player.seekTo(startTime, true);
-          setTimeout(() => {
-            playerReady = true;
-            startProgress();
-          }, 300);
-        }, 300);
+      onReady: (e) => {
+        const trySeek = () => {
+          if (!player || !player.getDuration()) {
+            setTimeout(trySeek, 200);
+            return;
+          }
+      
+          if (startTime > 0) {
+            player.seekTo(startTime, true);
+          }
+      
+          playerReady = true;
+          startProgress();
+        };
+      
+        trySeek();
       },
       onStateChange: onPlayerStateChange
     }
@@ -459,7 +467,14 @@ function openPlayer(id) {
 
   } else {
     player.loadVideoById(id);
-    startProgress();
+    
+    setTimeout(() => {
+      const saved = getProgress(id);
+      if (saved?.time) {
+        player.seekTo(saved.time, true);
+      }
+      startProgress();
+    }, 300);
   }
 }
 
