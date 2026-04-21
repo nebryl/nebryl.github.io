@@ -190,6 +190,11 @@ body {
   <div class="container">
 
     <div class="row">
+      <h2>Kürzlich geschaut</h2>
+      <div class="row-scroll" id="continue-videos"></div>
+    </div>
+
+    <div class="row">
       <h2>Eintracht Spandau</h2>
       <div class="row-scroll" id="spandau-videos"></div>
     </div>
@@ -372,6 +377,7 @@ function loadAll() {
   loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos");
   loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos");
   loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
+  renderContinueWatching(); 
 }
 
 /* OPEN */
@@ -428,6 +434,68 @@ function startProgress() {
     if (bar) bar.style.width = percent + "%";
 
   }, 500);
+}
+
+  /* PROGRESS Entries */
+function getAllProgressEntries() {
+  const items = [];
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+
+    if (!key.startsWith("vid_")) continue;
+
+    try {
+      const data = JSON.parse(localStorage.getItem(key));
+      if (!data) continue;
+
+      const id = key.replace("vid_", "");
+
+      const percent = data.time / data.duration;
+
+      // nur sinnvolle Einträge
+      if (percent < 0.1 || percent > 0.98) continue;
+
+      items.push({
+        id,
+        ...data
+      });
+
+    } catch (e) {}
+  }
+
+  return items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+}
+
+  
+/* renderContinueWatching */
+function renderContinueWatching() {
+
+  const box = document.getElementById("continue-videos");
+  if (!box) return;
+
+  box.innerHTML = "";
+
+  const items = getAllProgressEntries();
+
+  items.forEach(entry => {
+
+    const div = document.createElement("div");
+    div.className = "video";
+    div.setAttribute("data-id", entry.id);
+
+    const percent = (entry.time / entry.duration) * 100;
+
+    div.innerHTML = `
+      <img src="https://img.youtube.com/vi/${entry.id}/mqdefault.jpg">
+      <span>Weiter schauen</span>
+      <div class="mini-progress" style="width:${percent}%"></div>
+    `;
+
+    div.onclick = () => openPlayer(entry.id);
+
+    box.appendChild(div);
+  });
 }
 
 /* CLOSE */
