@@ -444,14 +444,18 @@ function openPlayer(id) {
     videoId: id,
     playerVars: { autoplay: 1 },
     events: {
-      onReady: (e) => {
-        const trySeek = () => {
-          if (!player || !player.getDuration()) {
-            setTimeout(trySeek, 200);
+      onReady: () => {
+      
+        const waitForVideo = () => {
+      
+          const duration = player.getDuration?.();
+      
+          if (!duration || duration === 0) {
+            setTimeout(waitForVideo, 200);
             return;
           }
       
-          if (startTime > 0) {
+          if (startTime > 1) {
             player.seekTo(startTime, true);
           }
       
@@ -459,7 +463,8 @@ function openPlayer(id) {
           startProgress();
         };
       
-        trySeek();
+        // kleine Startverzögerung für YouTube intern
+        setTimeout(waitForVideo, 300);
       },
       onStateChange: onPlayerStateChange
     }
@@ -469,11 +474,29 @@ function openPlayer(id) {
     player.loadVideoById(id);
     
     setTimeout(() => {
+    
       const saved = getProgress(id);
-      if (saved?.time) {
-        player.seekTo(saved.time, true);
-      }
-      startProgress();
+      const time = saved?.time || 0;
+    
+      const waitSeek = () => {
+    
+        const duration = player.getDuration?.();
+    
+        if (!duration || duration === 0) {
+          setTimeout(waitSeek, 200);
+          return;
+        }
+    
+        if (time > 1) {
+          player.seekTo(time, true);
+        }
+    
+        playerReady = true;
+        startProgress();
+      };
+    
+      waitSeek();
+    
     }, 300);
   }
 }
