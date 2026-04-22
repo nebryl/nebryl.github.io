@@ -308,7 +308,7 @@ body {
 
 .hero-banner {
   width: 100%;
-  height: 500px;
+  height: 100%;
   background: #2a2926;
   position: relative;
   cursor: pointer;
@@ -318,15 +318,17 @@ body {
   /* Weiche Maske für sanftes Ausfaden */
   -webkit-mask-image: linear-gradient(
     to bottom,
-    rgba(0,0,0,1) 90%,
-    rgba(0,0,0,0.95) 97%,
+    rgba(0,0,0,1) 65%,
+    rgba(0,0,0,0.6) 75%,
+    rgba(0,0,0,0.2) 85%,
     rgba(0,0,0,0) 100%
   );
 
   mask-image: linear-gradient(
     to bottom,
-    rgba(0,0,0,1) 90%,
-    rgba(0,0,0,0.95) 97%,
+    rgba(0,0,0,1) 65%,
+    rgba(0,0,0,0.6) 75%,
+    rgba(0,0,0,0.2) 85%,
     rgba(0,0,0,0) 100%
   );
 
@@ -347,27 +349,34 @@ body {
 
 /* Nur sanftes Ausfaden am unteren Rand */
 .hero-banner::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 150px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, var(--bg) 100%);
-  pointer-events: none;
-  z-index: 3;
+  display: none;
 }
 
-.hero-badge {
+.hero-info {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  background: red;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 12px;
+
+  top: 50%;
+  right: 60px;
+
+  transform: translateY(-50%);
+
+  z-index: 4;
+
+  max-width: 500px;
+  text-align: right;
+}
+
+.hero-info h1 {
+  margin: 0;
+
+  font-size: 20px;
+  font-weight: 600;
+
+  color: #fff;
+
+  line-height: 1.2;
+
+  text-shadow: 0 4px 20px rgba(0,0,0,0.9);
 }
 
 /* NEW VIDEOS - LARGE */
@@ -385,8 +394,13 @@ body {
 
 #new-videos-row {
   position: relative;
-  z-index: 5;
-  margin-top: -180px;
+  z-index: 10;
+  margin-top: -400px;
+}
+
+#continue-row {
+  position: relative;
+  z-index: 10;
 }
 
 </style>
@@ -915,8 +929,12 @@ function renderNewVideos() {
   const heroId = getVideoId(heroItem.link);
   if (heroId) {
     heroBox.innerHTML = `
-      <img src="https://img.youtube.com/vi/${heroId}/maxresdefault.jpg" alt="${heroItem.title}">
-      <div class="hero-badge">NEU</div>
+      <img src="https://img.youtube.com/vi/${heroId}/maxresdefault.jpg"
+          onerror="this.src='https://img.youtube.com/vi/${heroId}/hqdefault.jpg'">
+
+      <div class="hero-info">
+        <h1>${heroItem.title}</h1>
+      </div>
     `;
     heroBox.onclick = () => openPlayer(heroId);
   }
