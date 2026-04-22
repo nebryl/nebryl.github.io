@@ -129,17 +129,11 @@ body {
 
 /* TOPBAR */
 .topbar {
-  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   padding: 15px 20px;
   margin-top: 10px;
-}
-
-.logo {
-  position: absolute;
-  left: 20px;
 }
 
 .logo img {
@@ -148,9 +142,8 @@ body {
   object-fit: contain;
 }
 
-#welcome {
+.title {
   margin: 0;
-  text-align: center;
   font-weight: bold;
 }
 
@@ -162,9 +155,17 @@ body {
   color: #316A7D;
 }
 
+.right-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#welcome {
+  margin: 0;
+}
+
 .logout {
-  position: absolute;
-  right: 20px;
   cursor: pointer;
   background: #333;
   padding: 6px 10px;
@@ -246,12 +247,14 @@ body {
       <img src="./pic.jpg">
     </div>
 
-    <h2 id="welcome">
+    <h2 class="title">
       <span class="eins">Eins</span><span class="flix">flix</span>
-      <span id="user"></span>
     </h2>
 
-    <div class="logout" onclick="logout()">Logout</div>
+    <div class="right-side">
+      <span id="welcome">Willkommen <span id="user"></span></span>
+      <div class="logout" onclick="logout()">Logout</div>
+    </div>
   </div>
 
   <div class="container">
@@ -342,8 +345,8 @@ function startApp() {
   document.getElementById("loginView").style.display = "none";
   document.getElementById("appView").style.display = "block";
   
-  document.getElementById("user").innerText =
-    " Willkommen " + localStorage.getItem("user");  
+  document.getElementById("welcome").innerText =
+    "Willkommen " + localStorage.getItem("user");  
 
   loadAll();
   renderContinueWatching();
