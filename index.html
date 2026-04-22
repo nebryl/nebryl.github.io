@@ -423,11 +423,7 @@ body {
     </h2>
 
     <div class="right-side">
-      <span id="stats">Nutzer ...</span>
-      <span style="margin: 0 10px;">|</span>
-      <span id="welcome">
-        Willkommen <span id="user"></span>
-      </span>
+      <span id="welcome">Willkommen <span id="user"></span></span>
       <div class="logout" onclick="logout()">Logout</div>
     </div>
   </div>
@@ -980,22 +976,6 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closePlayer();
 });
-
-
-function loadStats() {
-  fetch("https://nebryl.goatcounter.com/counter.json?start=0")
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("stats").innerText =
-        "Nutzer " + data.count;
-    })
-    .catch(() => {
-      document.getElementById("stats").innerText =
-        "Nutzer -";
-    });
-}
-
-loadStats();
 
 </script>
 
