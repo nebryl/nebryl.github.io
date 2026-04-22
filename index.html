@@ -69,7 +69,9 @@ body {
 
 /* VIDEO */
 .video {
-  min-width: 200px;
+  min-width: 280px;
+  max-width: 280px;
+  aspect-ratio: 16/9;
   background: #2a2926;
   border-radius: 10px;
   overflow: hidden;
@@ -133,7 +135,12 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 15px 20px;
-  margin-top: 10px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
 }
 
 .logo img {
@@ -199,6 +206,18 @@ body {
 .video.short {
   min-width: 140px;
   width: 140px;
+  aspect-ratio: 16/9;
+}
+
+#continue-videos .video {
+  min-width: 350px;
+  max-width: 350px;
+  aspect-ratio: 16/9;
+}
+
+#continue-videos .video.short {
+  min-width: 175px;
+  width: 175px;
 }
 
 .video.short span {
@@ -216,6 +235,54 @@ body {
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: bold;
+}
+
+/* HERO SECTION */
+.hero-section {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-top: -20px;
+  margin-bottom: 20px;
+  padding: 0;
+}
+
+.hero-banner {
+  width: 100%;
+  height: 400px;
+  background: #2a2926;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.hero-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: red;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+/* NEW VIDEOS - LARGE */
+.video.large {
+  min-width: 420px;
+  max-width: 420px;
+  aspect-ratio: 16/9;
+}
+
+#new-videos .video.large.short {
+  min-width: 210px;
+  max-width: 210px;
 }
 
 </style>
@@ -258,6 +325,15 @@ body {
   </div>
 
   <div class="container">
+
+  <div class="hero-section" id="hero-row">
+    <div class="hero-banner" id="hero-banner"></div>
+  </div>
+
+  <div class="row" id="new-videos-row">
+    <h2 id="new-videos-title">Neue Videos</h2>
+    <div class="row-scroll" id="new-videos"></div>
+  </div>
 
   <div class="row" id="continue-row">
     <h2 id="continue-title">Wieder rein da!</h2>
@@ -348,7 +424,9 @@ function startApp() {
   document.getElementById("welcome").innerText =
     "Willkommen " + localStorage.getItem("user");  
 
+  allNewVideos = [];
   loadAll();
+  renderNewVideos();
   renderContinueWatching();
 }
 
@@ -362,11 +440,12 @@ window.onload = () => {
 
 /* ================= PROGRESS STORAGE ================= */
 
-function saveProgress(id, time, duration, title) {
+function saveProgress(id, time, duration, title, isShort = false) {
   localStorage.setItem("vid_" + id, JSON.stringify({
     time,
     duration,
     title,
+    isShort,
     ts: Date.now()
   }));
 }
@@ -391,6 +470,7 @@ function getProgress(id) {
 let player;
 let currentVideo = null;
 let progressInterval = null;
+let allNewVideos = [];
 
 function getVideoId(url) {
   if (!url) return null;
@@ -475,14 +555,28 @@ async function loadColumn(channelId, containerId) {
   const box = document.getElementById(containerId);
   box.innerHTML = "";
 
-  data.items?.forEach(v => box.appendChild(createVideo(v)));
+  data.items?.forEach(v => {
+    const card = createVideo(v);
+    box.appendChild(card);
+    
+    // Sammle neue Videos (jünger als 48h)
+    if (isNewVideo(v)) {
+      allNewVideos.push(v);
+    }
+  });
+  
+  return true;
 }
 
 function loadAll() {
-  loadColumn("UC5QM2OXKyZaNw13iLbuEpCg", "spandau-videos");
-  loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos");
-  loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos");
-  loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos");
+  Promise.all([
+    loadColumn("UC5QM2OXKyZaNw13iLbuEpCg", "spandau-videos"),
+    loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos"),
+    loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos"),
+    loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos")
+  ]).then(() => {
+    renderNewVideos();
+  });
 }
 
   /* onYouTubeIframeAPIReady */
@@ -593,7 +687,9 @@ function startProgress() {
     if (!duration) return;
    
     const title = document.querySelector(`.video[data-id="${currentVideo}"] span`)?.innerText || "";
-    saveProgress(currentVideo, current, duration, title);
+    const videoElement = document.querySelector(`.video[data-id="${currentVideo}"]`);
+    const isShortVideo = videoElement?.classList.contains("short") || false;
+    saveProgress(currentVideo, current, duration, title, isShortVideo);
   
     const percent = (current / duration) * 100;
   
@@ -669,7 +765,7 @@ function renderContinueWatching() {
   items.forEach(entry => {
 
     const div = document.createElement("div");
-    div.className = "video";
+    div.className = "video" + (entry.isShort ? " short" : "");
     div.setAttribute("data-id", entry.id);
 
     const percent = (entry.time / entry.duration) * 100;
@@ -683,6 +779,43 @@ function renderContinueWatching() {
     div.onclick = () => openPlayer(entry.id);
 
     box.appendChild(div);
+  });
+}
+
+/* renderNewVideos */
+function renderNewVideos() {
+  const heroBox = document.getElementById("hero-banner");
+  const box = document.getElementById("new-videos");
+  const row = document.getElementById("new-videos-row");
+  
+  if (!box || !row || !heroBox) return;
+  
+  box.innerHTML = "";
+  heroBox.innerHTML = "";
+  
+  if (!allNewVideos.length) {
+    row.style.display = "none";
+    return;
+  }
+  
+  row.style.display = "block";
+  
+  // Hero Banner - erstes Video
+  const heroItem = allNewVideos[0];
+  const heroId = getVideoId(heroItem.link);
+  if (heroId) {
+    heroBox.innerHTML = `
+      <img src="https://img.youtube.com/vi/${heroId}/maxresdefault.jpg" alt="${heroItem.title}">
+      <div class="hero-badge">NEU</div>
+    `;
+    heroBox.onclick = () => openPlayer(heroId);
+  }
+  
+  // Große Kacheln - alle neuen Videos
+  allNewVideos.forEach(item => {
+    const card = createVideo(item);
+    card.classList.add("large");
+    box.appendChild(card);
   });
 }
 
@@ -701,7 +834,9 @@ function saveCurrent() {
   }
   
   const title = document.querySelector(`.video[data-id="${currentVideo}"] span`)?.innerText || "";
-  saveProgress(currentVideo, current, duration, title);
+  const videoElement = document.querySelector(`.video[data-id="${currentVideo}"]`);
+  const isShortVideo = videoElement?.classList.contains("short") || false;
+  saveProgress(currentVideo, current, duration, title, isShortVideo);
 }
 
 /* CLOSE */
