@@ -427,6 +427,24 @@ body {
   z-index: 10;
 }
 
+.hover-preview {
+  position: fixed;
+  width: 320px;
+  height: 180px;
+  background: black;
+  border-radius: 10px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 99999;
+  display: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+.hover-preview iframe {
+  width: 100%;
+  height: 100%;
+}
+
 </style>
 </head>
 
@@ -514,6 +532,8 @@ body {
 <div class="preview" id="playerView">
   <div id="player"></div>
 </div>
+
+<div id="hoverPreview" class="hover-preview"></div>
 
 <script>
 
@@ -683,6 +703,10 @@ function createVideo(item) {
   }
 
   div.onclick = () => openPlayer(id);
+
+  setTimeout(() => {
+    attachHoverPopup(div, id);
+  }, 0);  
 
   return div;
 }
@@ -930,6 +954,10 @@ function renderContinueWatching() {
     div.onclick = () => openPlayer(entry.id);
 
     box.appendChild(div);
+    
+    setTimeout(() => {
+      attachHoverPopup(div, entry.id);
+    }, 0);
   });
 }
 
@@ -1008,6 +1036,51 @@ function closePlayer() {
   clearInterval(progressInterval);
   progressInterval = null;
   renderContinueWatching();
+}
+
+let hoverPlayer = null;
+
+function attachHoverPopup(card, videoId) {
+
+  const preview = document.getElementById("hoverPreview");
+
+  card.addEventListener("mouseenter", () => {
+
+    preview.style.display = "block";
+
+    preview.innerHTML = `
+      <div id="hover-${videoId}" style="width:100%; height:100%;"></div>
+    `;
+
+    hoverPlayer = new YT.Player(`hover-${videoId}`, {
+      videoId: videoId,
+      playerVars: {
+        autoplay: 1,
+        mute: 1,
+        controls: 0,
+        rel: 0,
+        modestbranding: 1
+      }
+    });
+  });
+
+  card.addEventListener("mousemove", (e) => {
+    const offset = 15;
+
+    preview.style.left = (e.clientX + offset) + "px";
+    preview.style.top = (e.clientY + offset) + "px";
+  });
+
+  card.addEventListener("mouseleave", () => {
+
+    preview.style.display = "none";
+    preview.innerHTML = "";
+
+    if (hoverPlayer) {
+      hoverPlayer.destroy();
+      hoverPlayer = null;
+    }
+  });
 }
 
 /* EVENTS */
