@@ -63,7 +63,20 @@ body {
 .row-scroll {
   display: flex;
   gap: 10px;
+
   overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px;
+
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .row-scroll::-webkit-scrollbar {
@@ -80,6 +93,9 @@ body {
   overflow: hidden;
   cursor: pointer;
   position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+  scroll-snap-align: start;
 }
 
 .video img {
@@ -116,6 +132,12 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.video:hover {
+  transform: scale(1.05);
+  z-index: 20;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
 }
 
 /* PROGRESS */
