@@ -47,6 +47,8 @@ body {
   cursor: pointer;
 }
 
+
+
 /* APP */
 #appView {
   display: none;
@@ -449,17 +451,15 @@ body {
   z-index: 10;
 }
 
-.hover-preview {
-  position: fixed;
-  width: 320px;
-  height: 180px;
-  background: black;
-  border-radius: 10px;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 99999;
+.video-hover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
   display: none;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  background: black;
+  pointer-events: none;
 }
 
 .hover-preview iframe {
@@ -486,6 +486,24 @@ body {
 
     <button type="submit">Login</button>
   </form>
+</div>
+
+<div id="profileView" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#141413;
+  z-index:99999;
+  color:white;
+  text-align:center;
+  padding-top:150px;
+">
+  <h1>Wer schaut?</h1>
+
+  <div style="margin-top:40px;">
+    <button onclick="selectProfile('Neb')" style="margin:10px; padding:20px;">Neb</button>
+    <button onclick="selectProfile('Dad')" style="margin:10px; padding:20px;">Dad</button>
+  </div>
 </div>
 
 <!-- APP -->
@@ -525,27 +543,8 @@ body {
     <div class="row-scroll" id="continue-videos"></div>
   </div>
 
-    <div class="row">
-      <h2>Eintracht Spandau</h2>
-      <div class="row-scroll" id="spandau-videos"></div>
-    </div>
+  <div id="dynamic-rows"></div>
 
-    <div class="row">
-      <h2>Eintracht Spandau League of Legends</h2>
-      <div class="row-scroll" id="lol-videos"></div>
-    </div>
-
-    <div class="row">
-      <h2>Eintracht Spandau Fußball</h2>
-      <div class="row-scroll" id="fussball-videos"></div>
-    </div>
-
-    <div class="row">
-      <h2>Eintracht Spandau Mediathek</h2>
-      <div class="row-scroll" id="media-videos"></div>
-    </div>
-
-  </div>
 </div>
 
 <!-- OVERLAY + PLAYER -->
@@ -563,6 +562,45 @@ body {
 
 const PASSWORD = "EinsAufDieEins";
 
+const CHANNELS_Neb = [
+  {
+    title: "Eintracht Spandau",
+    id: "spandau-videos",
+    channelId: "UC5QM2OXKyZaNw13iLbuEpCg"
+  },
+  {
+    title: "Eintracht Spandau League of Legends",
+    id: "lol-videos",
+    channelId: "UCeM9ckIXeJFvdt4bKpXvTqw"
+  },
+  {
+    title: "Eintracht Spandau Fußball",
+    id: "fussball-videos",
+    channelId: "UCMQkXTIDVvVDh0ZuVB_0APg"
+  },
+  {
+    title: "Eintracht Spandau Mediathek",
+    id: "media-videos",
+    channelId: "UCeuKtCc2Q0ySUxYX8yRZhcg"
+  }
+];
+
+const CHANNELS_Dad = [
+  {
+    title: "Eintracht Spandau",
+    id: "spandau-videos",
+    channelId: "UC5QM2OXKyZaNw13iLbuEpCg"
+  },
+  {
+    title: "Eintracht Spandau League of Legends",
+    id: "lol-videos",
+    channelId: "UCeM9ckIXeJFvdt4bKpXvTqw"
+  }
+];
+
+let ACTIVE_CHANNELS = [];
+let currentUser = null;
+
 document.getElementById("loginForm").addEventListener("submit", function (e) {
   e.preventDefault();
   login();
@@ -578,10 +616,11 @@ function login() {
     return;
   }
 
-  localStorage.setItem("user", user);
   localStorage.setItem("loggedIn", "true");
 
-  startApp();
+  // 🔥 statt direkt App → Profile anzeigen
+  document.getElementById("loginView").style.display = "none";
+  document.getElementById("profileView").style.display = "block";
 }
 
 function togglePassword() {
@@ -601,6 +640,26 @@ function isLoggedIn() {
   return localStorage.getItem("loggedIn") === "true";
 }
 
+function selectProfile(user) {
+
+  currentUser = user;
+
+  // 🔥 Channel-Logik
+  if (user === "Neb") {
+    ACTIVE_CHANNELS = CHANNELS_Neb;
+  } else if (user === "Dad") {
+    ACTIVE_CHANNELS = CHANNELS_Dad;
+  } else {
+    ACTIVE_CHANNELS = [];
+  }
+
+  localStorage.setItem("user", user);
+
+  document.getElementById("profileView").style.display = "none";
+
+  startApp();
+}
+
 /* ================= APP ================= */
 
 function startApp() {
@@ -609,23 +668,42 @@ function startApp() {
   document.getElementById("appView").style.display = "block";
   
   document.getElementById("welcome").innerText =
-    "Willkommen " + localStorage.getItem("user");  
+    "Willkommen " + currentUser;
 
   allNewVideos = [];
-  loadAll();
-  renderNewVideos();
+
+  createRows();   // 🔥 WICHTIG
+  loadAll();      // lädt alles
   renderContinueWatching();
 }
 
 window.onload = () => {
   try {
-    if (isLoggedIn()) startApp();
+    if (isLoggedIn()) {
+      document.getElementById("loginView").style.display = "none";
+      document.getElementById("profileView").style.display = "block";
+    }
   } catch (e) {
     console.error(e);
   }
 };
 
+function createRows() {
+  const container = document.getElementById("dynamic-rows");
+  container.innerHTML = "";
 
+  ACTIVE_CHANNELS.forEach(ch => {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    row.innerHTML = `
+      <h2>${ch.title}</h2>
+      <div class="row-scroll" id="${ch.id}"></div>
+    `;
+
+    container.appendChild(row);
+  });
+}
 
 /* ================= PROGRESS STORAGE ================= */
 
@@ -711,6 +789,7 @@ function createVideo(item) {
     <img src="https://img.youtube.com/vi/${id}/hqdefault.jpg">
     <span>${item.title}</span>
     <div class="mini-progress"></div>
+    <div class="video-hover" id="hover-${id}"></div>
     ${isNew ? '<div class="badge-new">NEU</div>' : ''}
   `;
 
@@ -762,13 +841,11 @@ async function loadColumn(channelId, containerId) {
 }
 
 function loadAll() {
-  Promise.all([
-    loadColumn("UC5QM2OXKyZaNw13iLbuEpCg", "spandau-videos"),
-    loadColumn("UCeM9ckIXeJFvdt4bKpXvTqw", "lol-videos"),
-    loadColumn("UCMQkXTIDVvVDh0ZuVB_0APg", "fussball-videos"),
-    loadColumn("UCeuKtCc2Q0ySUxYX8yRZhcg", "media-videos")
-  ]).then(() => {
-      // 🔥 SORTIERUNG NACH ALTER
+  const promises = ACTIVE_CHANNELS.map(ch =>
+    loadColumn(ch.channelId, ch.id)
+  );
+
+  Promise.all(promises).then(() => {
     allNewVideos.sort((a, b) =>
       Date.parse(b.pubDate) - Date.parse(a.pubDate)
     );
@@ -988,35 +1065,83 @@ function renderNewVideos() {
   const heroBox = document.getElementById("hero-banner");
   const box = document.getElementById("new-videos");
   const row = document.getElementById("new-videos-row");
-  
-  if (!box || !row || !heroBox) return;
-  
-  box.innerHTML = "";
-  heroBox.innerHTML = "";
-  
+
   if (!allNewVideos.length) {
     row.style.display = "none";
+    document.getElementById("new-videos-title").style.display = "none";
+  } else {
+    row.style.display = "block";
+    document.getElementById("new-videos-title").style.display = "block";
+  }
+
+  let heroItem = null;
+
+  /* =========================
+     1. PRIORITÄT: NEW VIDEOS
+  ========================== */
+  if (allNewVideos.length > 0) {
+    heroItem = allNewVideos[0];
+  }
+
+  /* =========================
+     2. FALLBACK: 1. CHANNEL
+  ========================== */
+  if (!heroItem) {
+
+    const firstChannel = ACTIVE_CHANNELS[0];
+
+    if (firstChannel) {
+
+      const container = document.getElementById(firstChannel.id);
+
+      if (container) {
+
+        const firstCard = container.querySelector(".video");
+
+        if (firstCard) {
+
+          const img = firstCard.querySelector("img")?.src;
+          const title = firstCard.querySelector("span")?.innerText || "Video";
+
+          const match = img?.match(/vi\/(.+?)\//);
+
+          if (match?.[1]) {
+            heroItem = {
+              link: "https://youtube.com/watch?v=" + match[1],
+              title
+            };
+          }
+        }
+      }
+    }
+  }
+
+  /* =========================
+     3. ABSOLUTER FALLBACK
+  ========================== */
+  if (!heroItem) {
+    heroBox.innerHTML = `<div style="color:white;padding:20px;">Kein Video verfügbar</div>`;
     return;
   }
-  
-  row.style.display = "block";
-  
-  // Hero Banner - erstes Video
-  const heroItem = allNewVideos[0];
+
   const heroId = getVideoId(heroItem.link);
+
   if (heroId) {
     heroBox.innerHTML = `
       <img src="https://img.youtube.com/vi/${heroId}/maxresdefault.jpg"
-          onerror="this.src='https://img.youtube.com/vi/${heroId}/hqdefault.jpg'">
+        onerror="this.src='https://img.youtube.com/vi/${heroId}/hqdefault.jpg'">
 
       <div class="hero-info">
         <h1>${heroItem.title}</h1>
       </div>
     `;
+
     heroBox.onclick = () => openPlayer(heroId);
   }
-  
-  // Große Kacheln - alle neuen Videos
+
+  /* =========================
+     NEW VIDEO CARDS
+  ========================== */
   allNewVideos.forEach(item => {
     const card = createVideo(item);
     card.classList.add("large");
@@ -1062,19 +1187,18 @@ function closePlayer() {
 
 let hoverPlayer = null;
 
+
 function attachHoverPopup(card, videoId) {
 
-  const preview = document.getElementById("hoverPreview");
+  const container = card.querySelector(".video-hover");
+
+  let hoverPlayer = null;
 
   card.addEventListener("mouseenter", () => {
 
-    preview.style.display = "block";
+    container.style.display = "block";
 
-    preview.innerHTML = `
-      <div id="hover-${videoId}" style="width:100%; height:100%;"></div>
-    `;
-
-    hoverPlayer = new YT.Player(`hover-${videoId}`, {
+    hoverPlayer = new YT.Player(container.id, {
       videoId: videoId,
       playerVars: {
         autoplay: 1,
@@ -1086,17 +1210,10 @@ function attachHoverPopup(card, videoId) {
     });
   });
 
-  card.addEventListener("mousemove", (e) => {
-    const offset = 15;
-
-    preview.style.left = (e.clientX + offset) + "px";
-    preview.style.top = (e.clientY + offset) + "px";
-  });
-
   card.addEventListener("mouseleave", () => {
 
-    preview.style.display = "none";
-    preview.innerHTML = "";
+    container.style.display = "none";
+    container.innerHTML = "";
 
     if (hoverPlayer) {
       hoverPlayer.destroy();
