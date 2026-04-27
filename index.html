@@ -730,6 +730,7 @@ function login() {
     return;
   }
 
+  localStorage.setItem("username", user);
   localStorage.setItem("loggedIn", "true");
 
   // 🔥 statt direkt App → Profile anzeigen
@@ -756,7 +757,7 @@ function isLoggedIn() {
 
 function selectProfile(user) {
 
-  currentUser = user;
+  currentProfile = user;
 
   // 🔥 Channel-Logik
   if (user === "EinsOnly") {
@@ -787,8 +788,10 @@ function startApp() {
   document.getElementById("loginView").style.display = "none";
   document.getElementById("appView").style.display = "block";
   
+  const username = localStorage.getItem("username") || "User";
+
   document.getElementById("welcome").innerText =
-    "Willkommen " + currentUser;
+    "Willkommen " + username;
 
   allNewVideos = [];
 
