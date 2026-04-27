@@ -467,6 +467,37 @@ body {
   height: 100%;
 }
 
+.video-meta {
+  position: fixed;
+  top: calc(50% + 240px);
+  left: 50%;
+  transform: translateX(-50%);
+  
+  width: 800px;
+  padding: 15px 20px;
+
+  background: rgba(20,20,19,0.95);
+  border-radius: 10px;
+
+  color: #9B978E;
+
+  z-index: 10000;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.video-meta h3 {
+  margin: 0;
+  font-size: 18px;
+  color: white;
+}
+
+.video-meta p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
 </style>
 </head>
 
@@ -501,8 +532,8 @@ body {
   <h1>Wer schaut?</h1>
 
   <div style="margin-top:40px;">
-    <button onclick="selectProfile('Neb')" style="margin:10px; padding:20px;">Neb</button>
-    <button onclick="selectProfile('Dad')" style="margin:10px; padding:20px;">Dad</button>
+    <button onclick="selectProfile('EinsOnly')" style="margin:10px; padding:20px;">EinsOnly</button>
+    <button onclick="selectProfile('EinsPlus')" style="margin:10px; padding:20px;">EinsPlus</button>
   </div>
 </div>
 
@@ -554,6 +585,11 @@ body {
   <div id="player"></div>
 </div>
 
+<div class="video-meta" id="video-meta" style="display:none;">
+  <h3 id="meta-title"></h3>
+  <p id="meta-date"></p>
+</div>
+
 <div id="hoverPreview" class="hover-preview"></div>
 
 <script>
@@ -562,7 +598,7 @@ body {
 
 const PASSWORD = "EinsAufDieEins";
 
-const CHANNELS_Neb = [
+const CHANNELS_EinsOnly = [
   {
     title: "Eintracht Spandau",
     id: "spandau-videos",
@@ -585,7 +621,7 @@ const CHANNELS_Neb = [
   }
 ];
 
-const CHANNELS_Dad = [
+const CHANNELS_EinsPlus = [
   {
     title: "Eintracht Spandau",
     id: "spandau-videos",
@@ -595,6 +631,26 @@ const CHANNELS_Dad = [
     title: "Eintracht Spandau League of Legends",
     id: "lol-videos",
     channelId: "UCeM9ckIXeJFvdt4bKpXvTqw"
+  },
+  {
+    title: "Eintracht Spandau Fußball",
+    id: "fussball-videos",
+    channelId: "UCMQkXTIDVvVDh0ZuVB_0APg"
+  },
+  {
+    title: "Eintracht Spandau Mediathek",
+    id: "media-videos",
+    channelId: "UCeuKtCc2Q0ySUxYX8yRZhcg"
+  },
+  {
+    title: "PowerOfEvil",
+    id: "powerofevil-videos",
+    channelId: "UCD777FoaysRYNiIxL79Nmlg"
+  },
+  {
+    title: "Broeki",
+    id: "broeki-videos",
+    channelId: "UCMDbIWqBUH10L3XMlWyiEtQ"
   }
 ];
 
@@ -645,10 +701,10 @@ function selectProfile(user) {
   currentUser = user;
 
   // 🔥 Channel-Logik
-  if (user === "Neb") {
-    ACTIVE_CHANNELS = CHANNELS_Neb;
-  } else if (user === "Dad") {
-    ACTIVE_CHANNELS = CHANNELS_Dad;
+  if (user === "EinsOnly") {
+    ACTIVE_CHANNELS = CHANNELS_EinsOnly;
+  } else if (user === "EinsPlus") {
+    ACTIVE_CHANNELS = CHANNELS_EinsPlus;
   } else {
     ACTIVE_CHANNELS = [];
   }
@@ -785,6 +841,9 @@ function createVideo(item) {
   div.className = "video" + (isShortVideo ? " short" : "");
   div.setAttribute("data-id", id);
 
+  div.dataset.title = item.title;
+  div.dataset.date = item.pubDate;
+
   div.innerHTML = `
     <img src="https://img.youtube.com/vi/${id}/hqdefault.jpg">
     <span>${item.title}</span>
@@ -865,6 +924,32 @@ function openPlayer(id) {
 
   document.getElementById("overlay").style.display = "block";
   document.getElementById("playerView").style.display = "block";
+
+  const metaBox = document.getElementById("video-meta");
+  const metaTitle = document.getElementById("meta-title");
+  const metaDate = document.getElementById("meta-date");
+
+  const card = document.querySelector(`.video[data-id="${id}"]`);
+
+  if (card) {
+    metaTitle.innerText = card.dataset.title || "Unbekannt";
+
+    let dateText = "Unbekannt";
+
+    if (card?.dataset?.date) {
+      const d = new Date(card.dataset.date);
+
+      dateText = d.toLocaleDateString("de-DE") + " " +
+                d.toLocaleTimeString("de-DE", {
+                  hour: "2-digit",
+                  minute: "2-digit"
+                }) + " Uhr";
+    }
+
+    metaDate.innerText = "Veröffentlicht: " + dateText;
+
+    metaBox.style.display = "block";
+  }
 
   const saved = getProgress(id);
   const startTime = saved?.time || 0;
@@ -1179,6 +1264,8 @@ function closePlayer() {
     try { player.pauseVideo(); } catch(e) {}
   }
 
+  document.getElementById("video-meta").style.display = "none";
+
   currentVideo = null;
   clearInterval(progressInterval);
   progressInterval = null;
@@ -1191,12 +1278,13 @@ let hoverPlayer = null;
 function attachHoverPopup(card, videoId) {
 
   const container = card.querySelector(".video-hover");
-
   let hoverPlayer = null;
 
-  card.addEventListener("mouseenter", () => {
-
-    container.style.display = "block";
+  function createPlayer() {
+    if (!window.YT || !YT.Player) {
+      console.warn("YT API not ready yet");
+      return;
+    }
 
     hoverPlayer = new YT.Player(container.id, {
       videoId: videoId,
@@ -1208,10 +1296,25 @@ function attachHoverPopup(card, videoId) {
         modestbranding: 1
       }
     });
+  }
+
+  card.addEventListener("mouseenter", () => {
+    container.style.display = "block";
+
+    // sicherstellen dass API da ist
+    if (window.YT && YT.Player) {
+      createPlayer();
+    } else {
+      const wait = setInterval(() => {
+        if (window.YT && YT.Player) {
+          clearInterval(wait);
+          createPlayer();
+        }
+      }, 100);
+    }
   });
 
   card.addEventListener("mouseleave", () => {
-
     container.style.display = "none";
     container.innerHTML = "";
 
