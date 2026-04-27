@@ -514,6 +514,58 @@ body {
   animation: colaFall 8s linear forwards;
 }
 
+.cola-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.profile-card {
+  width: 160px;
+  height: 200px;
+  background: #1b1a18;
+  border-radius: 16px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  margin-bottom: 15px;
+  background-size: cover;
+  background-position: center;
+}
+
+.einsonly {
+  background: linear-gradient(135deg, #B74F46, #8c3b35);
+}
+
+.einsplus {
+  background: linear-gradient(135deg, #316A7D, #244f5d);
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ddd;
+}
+
 #playerView {
   display: flex;
   align-items: center;
@@ -534,6 +586,18 @@ body {
   width: 200px;
   height: 450px;
   overflow: hidden;
+}
+
+#colaCounter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#profileView {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 @keyframes colaFall {
@@ -581,11 +645,20 @@ body {
   text-align:center;
   padding-top:150px;
 ">
-  <h1>Wer schaut?</h1>
+  <h1>Kanäle preset:</h1>
 
-  <div style="margin-top:40px;">
-    <button onclick="selectProfile('EinsOnly')" style="margin:10px; padding:20px;">EinsOnly</button>
-    <button onclick="selectProfile('EinsPlus')" style="margin:10px; padding:20px;">EinsPlus</button>
+  <div style="display:flex; gap:30px; justify-content:center; margin-top:40px;">
+
+    <div class="profile-card" onclick="selectProfile('EinsOnly')">
+      <div class="avatar einsonly"></div>
+      <div class="name">EinsOnly</div>
+    </div>
+
+    <div class="profile-card" onclick="selectProfile('EinsPlus')">
+      <div class="avatar einsplus"></div>
+      <div class="name">EinsPlus</div>
+    </div>
+
   </div>
 </div>
 
@@ -605,7 +678,9 @@ body {
     </h2>
 
     <div class="right-side">
-      <span id="colaCounter">🥤 0</span>
+      <span id="colaCounter">
+        <img src="./cola.png" class="cola-icon"> 0
+      </span>
       <span id="welcome">Willkommen <span id="user"></span></span>
       <div class="logout" onclick="logout()">Logout</div>
     </div>
@@ -1403,7 +1478,9 @@ function attachHoverPopup(card, videoId) {
 }
 
 function updateColaUI() {
-  document.getElementById("colaCounter").innerText = "🥤 " + colaCount;
+  document.getElementById("colaCounter").innerHTML =
+    `${colaCount} <img src="./cola.png" class="cola-icon">`;
+
   localStorage.setItem("colaCount", colaCount);
 }
 
