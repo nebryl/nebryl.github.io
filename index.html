@@ -1018,27 +1018,50 @@ async function loadColumn(channelId, containerId) {
 
   const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
 
-  const res = await fetch(
-    "https://api.rss2json.com/v1/api.json?rss_url=" +
-    encodeURIComponent(url)
-  );
+  try {
 
-  const data = await res.json();
+    const res = await fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(url));
 
-  const box = document.getElementById(containerId);
-  box.innerHTML = "";
-
-  data.items?.forEach(v => {
-    const card = createVideo(v);
-    box.appendChild(card);
-    
-    // Sammle neue Videos (jünger als 48h)
-    if (isNewVideo(v)) {
-      allNewVideos.push(v);
+    if (!res.ok) {
+      throw new Error("HTTP Fehler: " + res.status);
     }
-  });
-  
-  return true;
+
+    const text = await res.text();
+
+    if (!text.includes("<feed")) {
+      console.error("Kein XML:", text.slice(0, 200));
+      return;
+    }
+
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, "text/xml");
+
+    const entries = [...xml.querySelectorAll("entry")];
+
+    const box = document.getElementById(containerId);
+    if (!box) return;
+
+    box.innerHTML = "";
+
+    entries.forEach(entry => {
+
+      const item = {
+        title: entry.querySelector("title")?.textContent,
+        link: entry.querySelector("link")?.getAttribute("href"),
+        pubDate: entry.querySelector("published")?.textContent
+      };
+
+      const card = createVideo(item);
+      box.appendChild(card);
+
+      if (isNewVideo(item)) {
+        allNewVideos.push(item);
+      }
+    });
+
+  } catch (err) {
+    console.error("Feed Fehler:", err);
+  }
 }
 
 function loadAll() {
