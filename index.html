@@ -979,6 +979,9 @@ function createVideo(item) {
 
   const saved = getProgress(id);
 
+  // 🔥 WICHTIG: EINDEUTIGE ID
+  const uniqueId = `hover-${id}-${Math.random().toString(36).substr(2,5)}`;
+
   const div = document.createElement("div");
   div.className = "video" + (isShortVideo ? " short" : "");
   div.setAttribute("data-id", id);
@@ -990,7 +993,10 @@ function createVideo(item) {
     <img src="https://img.youtube.com/vi/${id}/hqdefault.jpg">
     <span>${item.title}</span>
     <div class="mini-progress"></div>
-    <div class="video-hover" id="hover-${id}"></div>
+
+    <!-- 🔥 FIX IST HIER -->
+    <div class="video-hover" id="${uniqueId}"></div>
+
     ${isNew ? '<div class="badge-new">NEU</div>' : ''}
   `;
 
@@ -1008,7 +1014,7 @@ function createVideo(item) {
 
   setTimeout(() => {
     attachHoverPopup(div, id);
-  }, 0);  
+  }, 0);
 
   return div;
 }
@@ -1296,10 +1302,16 @@ function renderContinueWatching() {
 
     const percent = (entry.time / entry.duration) * 100;
 
+    // 🔥 NEU: eindeutige ID
+    const uniqueId = `hover-${entry.id}-${Math.random().toString(36).substr(2,5)}`;
+
     div.innerHTML = `
       <img src="https://img.youtube.com/vi/${entry.id}/hqdefault.jpg">
       <span>${entry.title || "Weiter schauen"}</span>
       <div class="mini-progress" style="width:${percent}%"></div>
+
+      <!-- 🔥 NEU: Hover Container -->
+      <div class="video-hover" id="${uniqueId}"></div>
     `;
 
     div.onclick = () => openPlayer(entry.id);
