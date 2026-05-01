@@ -696,7 +696,7 @@ body {
   border: 1px solid rgba(255,255,255,0.08);
   padding: 20px;
   border-radius: 12px;
-  margin-top: 100px;
+  margin-top: 10px;
 }
 
 #playerView {
@@ -731,6 +731,47 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.fussballde_widget {
+  border-radius: 12px;
+  overflow: hidden;
+
+  filter: brightness(0.55) contrast(0.95);
+
+  background: rgba(0,0,0,0.2);
+}
+
+.table-card {
+  background: #2a2926;
+  border-radius: 10px;
+  overflow: hidden;
+
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.06);
+
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.section-title {
+  margin: 20px 0 10px 0;
+}
+
+#footballView {
+  padding: 90px 20px 20px 20px; /* wichtig: links/rechts Abstand */
+}
+
+#footballView .card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+
+  padding: 15px;
+
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
 }
 
 @keyframes colaFall {
@@ -868,17 +909,28 @@ body {
 
 <div id="footballView" class="page">
 
-  <div class="card">
-
-    <h3>Tabelle:</h3>
-
-    <div 
-      class="fussballde_widget"
-      data-id="91bd1761-555a-42a8-bcc6-9c5c40151b15"
-      data-type="table"
-      style="width:100%">
+  <div class="row" id="letztesSpiel-row">
+    <h2>Letztes Spiel</h2>
+    <div id="letztesSpiel" class="card">
+      <div 
+        class="fussballde_widget"
+        data-id="bd190f85-1a61-4461-861d-369297b24958"
+        data-type="match"
+        style="width: 100%">
+      </div>
     </div>
+  </div>
 
+  <div class="row" id="tabelle-row">
+    <h2>Tabelle</h2>
+    <div id="tabelle" class="card">
+      <div 
+        class="fussballde_widget"
+        data-id="91bd1761-555a-42a8-bcc6-9c5c40151b15"
+        data-type="table"
+        style="width:100%">
+      </div>
+    </div>
   </div>
 
 </div>
