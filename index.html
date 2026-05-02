@@ -1705,6 +1705,8 @@ function renderNewVideos() {
   const box = document.getElementById("new-videos");
   const row = document.getElementById("new-videos-row");
 
+  box.innerHTML = "";
+
   if (!allNewVideos.length) {
     row.style.display = "none";
     document.getElementById("new-videos-title").style.display = "none";
