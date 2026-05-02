@@ -770,6 +770,109 @@ body {
   box-shadow: 0 10px 25px rgba(0,0,0,0.25);
 }
 
+.video.no-hover .video-hover {
+  display: none !important;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 320px;
+  max-width: 320px;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  background: #111;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+/* 🔷 Badge oben rechts */
+.tile-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: #e50914; /* Netflix Rot */
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(229, 9, 20, 0.4);
+}
+
+/* 🎬 Bild / Textbereich */
+.tile-image {
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🧠 Text-Placeholder */
+.tile-text {
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  color: white;
+
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  font-style: italic;
+  transform: skew(-10deg);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  white-space: pre-line;
+
+  text-shadow: 
+    0 2px 10px rgba(0,0,0,0.8),
+    0 0 12px rgba(255,255,255,0.08);
+}
+
+/* 📛 Titel unten */
+.tile-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  text-align: left;
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.85),
+    rgba(0,0,0,0.35),
+    transparent
+  );
+  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 3;
+  backdrop-filter: blur(2px);
+}
+
+.tile:hover {
+  transform: scale(1.05);
+  z-index: 20;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+}
+
 @keyframes colaFall {
   0% {
     transform: translateY(-100px);
@@ -841,14 +944,16 @@ body {
       <a href="https://op.gg/de/lol/summoners/euw/nebryl-EUW" class="impressum" target="_blank">
         Impressum
       </a>
-    <button onclick="showPage('einsflix', event)" 
-            class="nav-btn active" 
-            data-page="einsflix">
-      🎬 Videos
-    </button>
-
+      <button onclick="showPage('einsflix', event)" 
+              class="nav-btn active" 
+              data-page="einsflix">
+        🎬 Videos
+      </button>
       <button onclick="showPage('football', event)" class="nav-btn" data-page="football">
-        ⚽ Tabelle
+        ⚽ Fussball
+      </button>
+      <button onclick="showPage('icon', event)" class="nav-btn" data-page="icon">
+        🏆 ICON
       </button>
     </div>
 
@@ -926,6 +1031,17 @@ body {
         data-type="table"
         style="width:100%">
       </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="iconView" class="page">
+
+  <div class="container" style="padding-top:90px;">
+    <div class="row">
+      <h2>Icon League</h2>
+      <div class="row-scroll" id="icon-videos"></div>
     </div>
   </div>
 
@@ -1067,7 +1183,8 @@ function showPage(page, e) {
 
   const pages = {
     einsflix: document.getElementById("einsflixView"),
-    football: document.getElementById("footballView")
+    football: document.getElementById("footballView"),
+    icon: document.getElementById("iconView")
   };
 
   Object.values(pages).forEach(p => {
@@ -1118,6 +1235,7 @@ function startApp() {
   createRows();
   loadAll();
   renderContinueWatching();
+  loadIconTiles();
 
   requestAnimationFrame(() => {
     showPage("einsflix");
@@ -1841,6 +1959,67 @@ function colaStart() {
   colaInterval = setInterval(() => {
     spawnCola();
   }, 10000 + Math.random() * 10000);
+}
+
+function createLinkTile(title, imageOrText, link) {
+  const a = document.createElement("a");
+  a.href = link;
+  a.className = "tile";
+
+  // 🔷 Badge (wie vorher)
+  const badge = document.createElement("div");
+  badge.className = "tile-badge";
+  badge.innerText = "LINK";
+
+  const media = document.createElement("div");
+  media.className = "tile-image";
+
+  if (imageOrText.startsWith("http")) {
+    media.style.backgroundImage = `url(${imageOrText})`;
+  } else {
+    media.classList.add("tile-text");
+    media.innerText = imageOrText;
+  }
+
+  const label = document.createElement("div");
+  label.className = "tile-title";
+  label.innerText = title;
+
+  a.appendChild(badge);
+  a.appendChild(media);
+  a.appendChild(label);
+
+  return a;
+}
+
+function loadIconTiles() {
+
+  const box = document.getElementById("icon-videos");
+  if (!box) return;
+
+  box.innerHTML = "";
+
+  const tileTeam = createLinkTile(
+    "Eintracht Spandau – Icon League",
+    "EINTRACHT SPANDAU",
+    "https://www.theiconleague.com/teams/eintracht-spandau"
+  );
+
+  const tileTabelle = createLinkTile(
+    "Icon League – Tabelle",
+    "TABELLE",
+    "https://www.theiconleague.com/standings/season-04/tabelle"
+  );
+
+  const tileTickets = createLinkTile(
+    "Icon League – Tickets",
+    "TICKETS",
+    "https://www.theiconleague.com/tickets"
+  );
+
+  box.appendChild(tileTeam);
+  box.appendChild(tileTabelle);
+  box.appendChild(tileTickets);
 }
 
 /* EVENTS */
