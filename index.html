@@ -378,9 +378,14 @@ body {
 }
 
 #continue-videos .video {
-  min-width: 350px;
-  max-width: 350px;
+  min-width: 350px !important;
+  max-width: 350px !important;
   aspect-ratio: 16/9;
+}
+
+#new-videos .video {
+  min-width: 350px !important;
+  max-width: 350px !important;
 }
 
 #continue-videos .video.short {
@@ -527,12 +532,14 @@ body {
 }
 
 #new-videos-row {
+  min-width: 350px;
   position: relative;
   z-index: 10;
   margin-top: -50px;
 }
 
 #continue-row {
+  min-width: 280px;
   position: relative;
   z-index: 10;
 }
@@ -1785,7 +1792,6 @@ function renderNewVideos() {
   ========================== */
   allNewVideos.forEach(item => {
     const card = createVideo(item);
-    card.classList.add("large");
     box.appendChild(card);
   });
 }
